@@ -1,0 +1,15 @@
+[package]
+name    = "rollbar"
+version = "0.1.0"
+authors = ["Giovanni Capuano <webmaster@giovannicapuano.net"]
+
+repository  = "https://github.com/RoxasShadow/rollbar-rs"
+license     = "BSD-2-Clause"
+
+description = "Exception tracking and logging from Rust to Rollbar."
+keywords    = ["rollbar", "logging", "errors", "exceptions"]
+
+[dependencies]
+hyper = "0.10"
+hyper-openssl = "0.2"
+serde_json = "0.9"
