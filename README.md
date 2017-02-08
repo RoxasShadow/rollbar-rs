@@ -22,3 +22,9 @@ Manual logging could be useful when we want to handle errors
 but also notify Rollbar about them.
 
 `examples/error.rs` shows how to deal with errors, while `examples/message.rs` is for plain text reports.
+
+## TODO
+- Make the API easier to use (macros?)
+- Clean the code (logging crate?)
+- Support Rollbar responses natively with proper structs
+- Support more Rollbar fields in the payload
