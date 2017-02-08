@@ -9,7 +9,7 @@ fn main() {
 
     panic::set_hook(Box::new(move |panic_info| {
         let backtrace = backtrace::Backtrace::new();
-        let error = Error::from_panic(&backtrace, panic_info).build_payload(
+        let error = Error::from_panic(panic_info, &backtrace).build_payload(
             client.build_report().with_level("info"));
         client.send(error);
     }));

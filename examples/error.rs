@@ -10,9 +10,10 @@ fn main() {
     match "笑".parse::<i32>() {
         Ok(_) => { println!("lolnope"); },
         Err(e) => {
+            let backtrace = Backtrace::new();
             client.build_report()
                 .with_level(Level::ERROR)
-                .report(e, &Backtrace::new());
+                .report(e, &backtrace);
         }
     }
 }

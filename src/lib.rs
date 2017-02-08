@@ -74,7 +74,7 @@ impl Error {
         }
     }
 
-    pub fn from_panic(backtrace: &Backtrace, panic_info: &panic::PanicInfo) -> Error {
+    pub fn from_panic(panic_info: &panic::PanicInfo, backtrace: &Backtrace) -> Error {
         let payload = panic_info.payload();
         let error_message = match payload.downcast_ref::<&str>() {
             Some(s) => *s,
@@ -274,7 +274,7 @@ mod tests {
             let client = Client::new("ACCESS_TOKEN", "ENVIRONMENT");
             panic::set_hook(Box::new(move |panic_info| {
                 let backtrace = Backtrace::new();
-                let error = Error::from_panic(&backtrace, panic_info).build_payload(
+                let error = Error::from_panic(panic_info, &backtrace).build_payload(
                     client.build_report().with_level("info"));
                 let error = Arc::new(Mutex::new(error));
                 tx.lock().unwrap().send(error).unwrap();
@@ -328,6 +328,8 @@ mod tests {
         match "笑".parse::<i32>() {
             Ok(_) => { println!("lolnope"); },
             Err(e) => {
+                let backtrace = Backtrace::new();
+
                 client.build_report()
                     .with_level(Level::ERROR)
                     .with_send_strategy(Box::new(|_, payload| {
@@ -344,7 +346,7 @@ mod tests {
 
                         assert_eq!(expected_payload.to_string(), payload.to_string());
                     }))
-                    .report(e, &Backtrace::new());
+                    .report(e, &backtrace);
             }
         }
     }
