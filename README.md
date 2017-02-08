@@ -1,4 +1,7 @@
 # rollbar-rs
+
+[![Build Status](https://travis-ci.org/benashford/rs-es.svg?branch=master)](https://travis-ci.org/benashford/rs-es)
+
 Exception tracking and logging from Rust to Rollbar.
 
 This crate allows you to set a hook for the `panic`s that may happen during the runtime

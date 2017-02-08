@@ -1,0 +1,17 @@
+language: rust
+
+rust:
+  - stable
+  - nightly
+
+cache:
+  cargo: true
+
+script:
+   - |
+       cargo build &&
+       cargo test
+
+env:
+  global:
+    - RUST_BACKTRACE=1
