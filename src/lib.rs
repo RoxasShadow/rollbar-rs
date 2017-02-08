@@ -65,18 +65,15 @@ impl Default for Error {
     }
 }
 
-impl<T: fmt::Debug> From<T> for Error {
-    fn from(error: T) -> Error {
-        let error_message = format!("{:?}", error);
+impl Error {
+    fn from<T: fmt::Debug>(error: T, backtrace: &Backtrace) -> Error {
         Error {
-            message: error_message.to_owned(),
-            description: error_message,
+            message: format!("{:?}", error),
+            description: format!("{:?}", backtrace),
             ..Default::default()
         }
     }
-}
 
-impl Error {
     pub fn from_panic(backtrace: &Backtrace, panic_info: &panic::PanicInfo) -> Error {
         let payload = panic_info.payload();
         let error_message = match payload.downcast_ref::<&str>() {
@@ -177,17 +174,15 @@ pub struct ReportBuilder<'a> {
 }
 
 impl<'a> ReportBuilder<'a> {
-    pub fn report<T>(&mut self, error: T) -> &mut Self where T: Into<Error> {
+    pub fn report<T: fmt::Debug>(&mut self, error: T, backtrace: &Backtrace) -> &mut Self {
+        let payload = Error::from(error, backtrace).build_payload(&self);
+
         match self.send_strategy {
             Some(ref send_strategy) => {
                 let http_client = self.client.http_client.clone();
-                let payload = error.into().build_payload(&self);
                 send_strategy(http_client, payload);
             },
-            None => {
-                let payload = error.into().build_payload(&self);
-                self.client.send(payload);
-            }
+            None => { self.client.send(payload); }
         };
         self
     }
@@ -323,7 +318,6 @@ mod tests {
             .get_mut("exception").unwrap()
             .get_mut("description").unwrap() = Value::String("attempt to divide by zero".into());
 
-
         assert_eq!(expected_payload.to_string(), payload.to_string());
     }
 
@@ -337,12 +331,20 @@ mod tests {
                 client.build_report()
                     .with_level(Level::ERROR)
                     .with_send_strategy(Box::new(|_, payload| {
-                        assert_eq!(
-                            payload,
+                        // we're gonna ignore ignore the backtrace
+                        let mut payload: serde_json::Value = serde_json::from_str(&*payload).unwrap();
+                        let     expected_payload: serde_json::Value = serde_json::from_str(
                             r#"{"access_token":"ACCESS_TOKEN","data":{"body":{"trace":{"exception":{"class":"tests::test_report_match","description":"ParseIntError { kind: InvalidDigit }","message":"ParseIntError { kind: InvalidDigit }"},"frames":[{"filename":"","lineno":0}]}},"environment":"ENVIRONMENT","language":"rust","level":"error"}}"#
-                        );
+                        ).unwrap();
+                        *payload.get_mut("data").unwrap()
+                            .get_mut("body").unwrap()
+                            .get_mut("trace").unwrap()
+                            .get_mut("exception").unwrap()
+                            .get_mut("description").unwrap() = Value::String("ParseIntError { kind: InvalidDigit }".into());
+
+                        assert_eq!(expected_payload.to_string(), payload.to_string());
                     }))
-                    .report(e);
+                    .report(e, &Backtrace::new());
             }
         }
     }
