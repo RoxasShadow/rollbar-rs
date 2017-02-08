@@ -154,7 +154,7 @@ impl<'a> MessageToPayload for &'a str {
 const URL: &'static str = "https://api.rollbar.com/api/1/item/";
 
 pub struct ReportBuilder<'a> {
-    client: &'a Client<'a>,
+    client: &'a Client,
     level: Option<Level>,
     send_strategy: Option<Box<Fn(Arc<hyper::Client>, String)>>
 }
@@ -186,21 +186,21 @@ impl<'a> ReportBuilder<'a> {
     }
 }
 
-pub struct Client<'a> {
+pub struct Client {
     http_client: Arc<hyper::Client>,
-    access_token: &'a str,
-    environment: &'a str
+    access_token: String,
+    environment: String
 }
 
-impl<'a> Client<'a> {
-    pub fn new(access_token: &'a str, environment: &'a str) -> Client<'a> {
+impl Client {
+    pub fn new<T: Into<String>>(access_token: T, environment: T) -> Client {
         let ssl = hyper_openssl::OpensslClient::new().unwrap();
         let connector = hyper::net::HttpsConnector::new(ssl);
 
         Client {
             http_client: Arc::new(hyper::Client::with_connector(connector)),
-            access_token: access_token,
-            environment: environment
+            access_token: access_token.into(),
+            environment: environment.into()
         }
     }
 
