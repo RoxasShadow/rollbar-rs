@@ -13,3 +13,4 @@ keywords    = ["rollbar", "logging", "errors", "exceptions"]
 hyper = "0.10"
 hyper-openssl = "0.2"
 serde_json = "0.9"
+backtrace = "0.2"

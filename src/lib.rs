@@ -2,10 +2,13 @@
 extern crate serde_json;
 extern crate hyper;
 extern crate hyper_openssl;
+extern crate backtrace;
+
 use std::io::Read;
 use std::{panic, thread, fmt};
 use std::borrow::ToOwned;
 use std::sync::Arc;
+use backtrace::Backtrace;
 
 pub enum Level {
     CRITICAL,
@@ -39,13 +42,27 @@ impl ToString for Level {
     }
 }
 
-#[derive(Default)]
 pub struct Error {
     filename: String,
     line_number: u32,
     class: String,
     message: String,
     description: String
+}
+
+impl Default for Error {
+    fn default() -> Error {
+        let thread = thread::current();
+        let thread = thread.name().unwrap_or("unnamed");
+
+        Error {
+            filename: String::new(),
+            line_number: 0,
+            class: thread.to_owned(),
+            message: String::new(),
+            description: String::new()
+        }
+    }
 }
 
 impl<T: fmt::Debug> From<T> for Error {
@@ -60,12 +77,12 @@ impl<T: fmt::Debug> From<T> for Error {
 }
 
 impl Error {
-    pub fn from_panic(panic_info: &panic::PanicInfo) -> Error {
+    pub fn from_panic(backtrace: &Backtrace, panic_info: &panic::PanicInfo) -> Error {
         let payload = panic_info.payload();
         let error_message = match payload.downcast_ref::<&str>() {
             Some(s) => *s,
             None => match payload.downcast_ref::<String>() {
-                Some(s) => &s[..],
+                Some(s) => &**s,
                 None => "Box<Any>"
             }
         };
@@ -75,15 +92,15 @@ impl Error {
                 Error {
                     filename: location.file().to_owned(),
                     line_number: location.line().to_owned(),
-                    class: String::new(),
                     message: error_message.to_string(),
-                    description: error_message.to_string()
+                    description: format!("{:?}", backtrace),
+                    ..Default::default()
                 }
             },
             None => {
                 Error {
                     message: error_message.to_string(),
-                    description: error_message.to_string(),
+                    description: format!("{:?}", backtrace),
                     ..Default::default()
                 }
             }
@@ -242,11 +259,14 @@ impl Client {
 mod tests {
     extern crate serde_json;
     extern crate hyper;
+    extern crate backtrace;
 
     use std::panic;
     use super::{Client, Level, Error, MessageToPayload, ErrorToPayload};
     use std::sync::{Arc, Mutex};
     use std::sync::mpsc::channel;
+    use backtrace::Backtrace;
+    use serde_json::Value;
 
     // TODO: rewrite this shit
     #[test]
@@ -258,7 +278,8 @@ mod tests {
 
             let client = Client::new("ACCESS_TOKEN", "ENVIRONMENT");
             panic::set_hook(Box::new(move |panic_info| {
-                let error = Error::from_panic(panic_info).build_payload(
+                let backtrace = Backtrace::new();
+                let error = Error::from_panic(&backtrace, panic_info).build_payload(
                     client.build_report().with_level("info"));
                 let error = Arc::new(Mutex::new(error));
                 tx.lock().unwrap().send(error).unwrap();
@@ -281,9 +302,9 @@ mod tests {
             Err(poisoned) => poisoned.into_inner(),
         };
 
-        let     payload:          serde_json::Value = serde_json::from_str(&*error).unwrap();
+        let mut payload:          serde_json::Value = serde_json::from_str(&*error).unwrap();
         let mut expected_payload: serde_json::Value = serde_json::from_str(
-            r#"{"access_token":"ACCESS_TOKEN","data":{"body":{"trace":{"exception":{"class":"","description":"attempt to divide by zero","message":"attempt to divide by zero"},"frames":[{"filename":"src/lib.rs","lineno":268}]}},"environment":"ENVIRONMENT","level":"info","language":"rust"}}"#
+            r#"{"access_token":"ACCESS_TOKEN","data":{"body":{"trace":{"exception":{"class":"tests::test_build_payload_from_panic","description":"attempt to divide by zero","message":"attempt to divide by zero"},"frames":[{"filename":"src/lib.rs","lineno":268}]}},"environment":"ENVIRONMENT","level":"info","language":"rust"}}"#
         ).unwrap();
 
         *expected_payload.get_mut("data").unwrap()
@@ -294,6 +315,14 @@ mod tests {
                                             .get("trace").unwrap()
                                             .get("frames").unwrap()
                                             .clone();
+
+        // we're gonna ignore ignore the backtrace
+        *payload.get_mut("data").unwrap()
+            .get_mut("body").unwrap()
+            .get_mut("trace").unwrap()
+            .get_mut("exception").unwrap()
+            .get_mut("description").unwrap() = Value::String("attempt to divide by zero".into());
+
 
         assert_eq!(expected_payload.to_string(), payload.to_string());
     }
@@ -310,7 +339,7 @@ mod tests {
                     .with_send_strategy(Box::new(|_, payload| {
                         assert_eq!(
                             payload,
-                            r#"{"access_token":"ACCESS_TOKEN","data":{"body":{"trace":{"exception":{"class":"","description":"ParseIntError { kind: InvalidDigit }","message":"ParseIntError { kind: InvalidDigit }"},"frames":[{"filename":"","lineno":0}]}},"environment":"ENVIRONMENT","language":"rust","level":"error"}}"#
+                            r#"{"access_token":"ACCESS_TOKEN","data":{"body":{"trace":{"exception":{"class":"tests::test_report_match","description":"ParseIntError { kind: InvalidDigit }","message":"ParseIntError { kind: InvalidDigit }"},"frames":[{"filename":"","lineno":0}]}},"environment":"ENVIRONMENT","language":"rust","level":"error"}}"#
                         );
                     }))
                     .report(e);
