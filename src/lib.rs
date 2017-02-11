@@ -4,8 +4,8 @@ extern crate hyper;
 extern crate hyper_openssl;
 extern crate backtrace;
 
-use std::thread;
 use std::io::Read;
+use std::thread;
 use std::fmt::Debug;
 use std::panic::PanicInfo;
 use std::borrow::ToOwned;
@@ -16,9 +16,11 @@ use backtrace::Backtrace;
 macro_rules! report_error {
     ($client:ident, $err:ident) => {
         let backtrace = backtrace::Backtrace::new();
+        let line = line!() - 2;
+
         $client.build_report()
             .with_backtrace(&backtrace)
-            .with_line_number(line!())
+            .with_line_number(line)
             .with_file_name(file!())
             .from_error(&$err)
             .send();
@@ -251,8 +253,8 @@ impl<'a> ToString for ReportMessageBuilder<'a> {
         json!({
             "access_token": client.access_token,
             "data": {
+                "environment": client.environment,
                 "body": {
-                    "environment": client.environment,
                     "message": {
                         "body": self.message
                     }
@@ -382,9 +384,8 @@ mod tests {
     use backtrace::Backtrace;
     use serde_json::Value;
 
-    // TODO: rewrite this shit
     #[test]
-    fn test_build_payload_from_panic() {
+    fn test_report_panics() {
         let (tx, rx) = channel();
 
         {
@@ -414,16 +415,35 @@ mod tests {
         let _ = panic::take_hook();
 
         let lock = rx.recv().unwrap();
-        let error = match lock.lock() {
+        let payload = match lock.lock() {
             Ok(guard) => guard,
             Err(poisoned) => poisoned.into_inner(),
         };
 
-        let mut payload:          serde_json::Value = serde_json::from_str(&*error).unwrap();
-        let mut expected_payload: serde_json::Value = serde_json::from_str(
-            r#"{"access_token":"ACCESS_TOKEN","data":{"body":{"trace":{"exception":{"class":"tests::test_build_payload_from_panic","description":"attempt to divide by zero","message":"attempt to divide by zero"},"frames":[{"filename":"src/lib.rs","lineno":268}]}},"environment":"ENVIRONMENT","level":"info","language":"rust"}}"#
-        ).unwrap();
+        let payload: Value = serde_json::from_str(&*payload).unwrap();
+        let mut expected_payload = json!({
+            "access_token": "ACCESS_TOKEN",
+            "data": {
+                "environment": "ENVIRONMENT",
+                "body": {
+                    "trace": {
+                        "frames": [{
+                            "filename": "src/lib.rs",
+                            "lineno": 268
+                        }],
+                        "exception": {
+                            "class": "tests::test_report_panics",
+                            "message": "attempt to divide by zero",
+                            "description": "attempt to divide by zero"
+                        }
+                    }
+                },
+                "level": "info",
+                "language": "rust"
+            }
+        });
 
+        // copy the frames from the payload
         *expected_payload.get_mut("data").unwrap()
             .get_mut("body").unwrap()
             .get_mut("trace").unwrap()
@@ -431,14 +451,19 @@ mod tests {
                                             .get("body").unwrap()
                                             .get("trace").unwrap()
                                             .get("frames").unwrap()
-                                            .clone();
+                                            .to_owned();
 
-        // we're gonna ignore ignore the backtrace
-        *payload.get_mut("data").unwrap()
+        // copy the backtrace from the payload
+        *expected_payload.get_mut("data").unwrap()
             .get_mut("body").unwrap()
             .get_mut("trace").unwrap()
             .get_mut("exception").unwrap()
-            .get_mut("description").unwrap() = Value::String("attempt to divide by zero".into());
+            .get_mut("description").unwrap() = payload.get("data").unwrap()
+                                                .get("body").unwrap()
+                                                .get("trace").unwrap()
+                                                .get("exception").unwrap()
+                                                .get("description").unwrap()
+                                                .to_owned();
 
         assert_eq!(expected_payload.to_string(), payload.to_string());
     }
@@ -448,44 +473,62 @@ mod tests {
         let client = Client::new("ACCESS_TOKEN", "ENVIRONMENT");
 
         match "笑".parse::<i32>() {
-            Ok(_) => { println!("lolnope"); },
+            Ok(_) => { assert!(false); },
             Err(e) => {
-                let backtrace = Backtrace::new();
-
-                client.build_report()
+                let payload = client.build_report()
                     .with_level(Level::ERROR)
-                    .with_send_strategy(Box::new(|_, payload| {
-                        // we're gonna ignore the backtrace
-                        let mut payload: serde_json::Value = serde_json::from_str(&*payload).unwrap();
-                        let     expected_payload: serde_json::Value = serde_json::from_str(
-                            r#"{"access_token":"ACCESS_TOKEN","data":{"body":{"trace":{"exception":{"class":"tests::test_report_error","description":"ParseIntError { kind: InvalidDigit }","message":"ParseIntError { kind: InvalidDigit }"},"frames":[{"filename":"","lineno":0}]}},"environment":"ENVIRONMENT","language":"rust","level":"error"}}"#
-                        ).unwrap();
-                        *payload.get_mut("data").unwrap()
-                            .get_mut("body").unwrap()
-                            .get_mut("trace").unwrap()
-                            .get_mut("exception").unwrap()
-                            .get_mut("description").unwrap() = Value::String("ParseIntError { kind: InvalidDigit }".into());
-
-                        assert_eq!(expected_payload.to_string(), payload.to_string());
-                    }))
-                    .with_backtrace(&backtrace)
                     .from_error(&e)
-                    .send();
+                    .to_string();
+
+                let expected_payload = json!({
+                    "access_token": "ACCESS_TOKEN",
+                    "data": {
+                        "environment": "ENVIRONMENT",
+                        "body": {
+                            "trace": {
+                                "frames": [{
+                                    "filename": "",
+                                    "lineno": 0
+                                }],
+                                "exception": {
+                                    "class": "tests::test_report_error",
+                                    "message": "ParseIntError { kind: InvalidDigit }",
+                                    "description": "ParseIntError { kind: InvalidDigit }"
+                                }
+                            }
+                        },
+                        "level": "error",
+                        "language": "rust"
+                    }
+                }).to_string();
+
+                assert_eq!(payload, expected_payload);
             }
         }
     }
 
     #[test]
-    fn test_payload_string() {
+    fn test_report_message() {
         let client = Client::new("ACCESS_TOKEN", "ENVIRONMENT");
+
         let payload = client.build_report()
             .with_level("info")
             .from_message("hai")
             .to_string();
 
-        assert_eq!(
-            payload,
-            r#"{"access_token":"ACCESS_TOKEN","data":{"body":{"environment":"ENVIRONMENT","message":{"body":"hai"}},"level":"info"}}"#
-        );
+        let expected_payload = json!({
+            "access_token": "ACCESS_TOKEN",
+            "data": {
+                "environment": "ENVIRONMENT",
+                "body": {
+                    "message": {
+                        "body": "hai"
+                    }
+                },
+                "level": "info"
+            }
+        }).to_string();
+
+        assert_eq!(payload, expected_payload);
     }
 }
