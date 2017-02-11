@@ -1,6 +1,6 @@
 [package]
 name    = "rollbar"
-version = "0.1.1"
+version = "0.2.0"
 authors = ["Giovanni Capuano <webmaster@giovannicapuano.net"]
 
 repository  = "https://github.com/RoxasShadow/rollbar-rs"
