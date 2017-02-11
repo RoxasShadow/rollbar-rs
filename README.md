@@ -1,6 +1,6 @@
 # rollbar-rs
-
 [![Build Status](https://travis-ci.org/benashford/rs-es.svg?branch=master)](https://travis-ci.org/benashford/rs-es)
+[![](https://meritbadge.herokuapp.com/rollbar)](https://crates.io/crates/rollbar)
 
 Exception tracking and logging from Rust to Rollbar.
 
