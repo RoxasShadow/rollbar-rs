@@ -1,13 +1,9 @@
-#[macro_use]
-extern crate serde_json;
+#[macro_use] extern crate serde_json;
 extern crate hyper;
 extern crate hyper_openssl;
 extern crate backtrace;
 
-use std::io::Read;
-use std::thread;
-use std::fmt::Debug;
-use std::panic::PanicInfo;
+use std::{thread, fmt, panic};
 use std::borrow::ToOwned;
 use std::sync::Arc;
 use backtrace::Backtrace;
@@ -88,7 +84,7 @@ const URL: &'static str = "https://api.rollbar.com/api/1/item/";
 
 pub struct ReportBuilder<'a> {
     client: &'a Client,
-    send_strategy: Option<Box<Fn(Arc<hyper::Client>, String)>>,
+    send_strategy: Option<Box<Fn(Arc<hyper::Client>, String) -> thread::JoinHandle<Option<ResponseStatus>>>>,
 
     level: Option<Level>,
     backtrace: Option<&'a Backtrace>,
@@ -98,20 +94,20 @@ pub struct ReportBuilder<'a> {
 
 pub struct ReportPanicBuilder<'a> {
     report_builder: &'a ReportBuilder<'a>,
-    panic_info: &'a PanicInfo<'a>
+    panic_info: &'a panic::PanicInfo<'a>
 }
 
 impl<'a> ReportPanicBuilder<'a> {
-    pub fn send(&mut self) {
+    pub fn send(&mut self) -> thread::JoinHandle<Option<ResponseStatus>> {
         let client = self.report_builder.client;
 
         match self.report_builder.send_strategy {
             Some(ref send_strategy) => {
                 let http_client = client.http_client.to_owned();
-                send_strategy(http_client, self.to_string());
+                send_strategy(http_client, self.to_string())
             },
-            None => { client.send(self.to_string()); }
-        };
+            None => { client.send(self.to_string()) }
+        }
     }
 }
 
@@ -171,26 +167,26 @@ impl<'a> ToString for ReportPanicBuilder<'a> {
     }
 }
 
-pub struct ReportErrorBuilder<'a, T: 'a + Debug> {
+pub struct ReportErrorBuilder<'a, T: 'a + fmt::Debug> {
     report_builder: &'a ReportBuilder<'a>,
     error: &'a T
 }
 
-impl<'a, T: Debug> ReportErrorBuilder<'a, T> {
-    pub fn send(&mut self) {
+impl<'a, T: fmt::Debug> ReportErrorBuilder<'a, T> {
+    pub fn send(&mut self) -> thread::JoinHandle<Option<ResponseStatus>> {
         let client = self.report_builder.client;
 
         match self.report_builder.send_strategy {
             Some(ref send_strategy) => {
                 let http_client = client.http_client.to_owned();
-                send_strategy(http_client, self.to_string());
+                send_strategy(http_client, self.to_string())
             },
-            None => { client.send(self.to_string()); }
-        };
+            None => { client.send(self.to_string()) }
+        }
     }
 }
 
-impl<'a, T: Debug> ToString for ReportErrorBuilder<'a, T> {
+impl<'a, T: fmt::Debug> ToString for ReportErrorBuilder<'a, T> {
     fn to_string(&self) -> String {
         let report_builder = self.report_builder;
         let client = report_builder.client;
@@ -232,16 +228,16 @@ pub struct ReportMessageBuilder<'a> {
 }
 
 impl<'a> ReportMessageBuilder<'a> {
-    pub fn send(&mut self) {
+    pub fn send(&mut self) -> thread::JoinHandle<Option<ResponseStatus>> {
         let client = self.report_builder.client;
 
         match self.report_builder.send_strategy {
             Some(ref send_strategy) => {
                 let http_client = client.http_client.to_owned();
-                send_strategy(http_client, self.to_string());
+                send_strategy(http_client, self.to_string())
             },
-            None => { client.send(self.to_string()); }
-        };
+            None => { client.send(self.to_string()) }
+        }
     }
 }
 
@@ -269,14 +265,14 @@ impl<'a> ToString for ReportMessageBuilder<'a> {
 }
 
 impl<'a> ReportBuilder<'a> {
-    pub fn from_panic(&'a mut self, panic_info: &'a PanicInfo) -> ReportPanicBuilder<'a> {
+    pub fn from_panic(&'a mut self, panic_info: &'a panic::PanicInfo) -> ReportPanicBuilder<'a> {
         ReportPanicBuilder {
             report_builder: self,
             panic_info: panic_info
         }
     }
 
-    pub fn from_error<T: Debug>(&'a mut self, error: &'a T) -> ReportErrorBuilder<'a, T> {
+    pub fn from_error<T: fmt::Debug>(&'a mut self, error: &'a T) -> ReportErrorBuilder<'a, T> {
         ReportErrorBuilder {
             report_builder: self,
             error: error
@@ -310,7 +306,7 @@ impl<'a> ReportBuilder<'a> {
         self
     }
 
-    pub fn with_send_strategy(&'a mut self, send_strategy: Box<Fn(Arc<hyper::Client>, String)>) -> &'a mut Self {
+    pub fn with_send_strategy(&'a mut self, send_strategy: Box<Fn(Arc<hyper::Client>, String) -> thread::JoinHandle<Option<ResponseStatus>>>) -> &'a mut Self {
         self.send_strategy = Some(send_strategy);
         self
     }
@@ -345,29 +341,70 @@ impl Client {
         }
     }
 
-    pub fn send(&self, payload: String) {
+    pub fn send(&self, payload: String) -> thread::JoinHandle<Option<ResponseStatus>> {
         let http_client = self.http_client.to_owned();
 
-        let _ = thread::spawn(move || {
+        thread::spawn(move || {
             let res = http_client.post(URL).body(&*payload).send();
 
             match res {
-                Ok(mut res) => {
-                    let mut body = String::new();
-                    res.read_to_string(&mut body).unwrap();
+                Ok(res) => {
+                    let status: ResponseStatus = res.status.into();
 
-                    println!("- Error while sending a report to Rollbar.");
-                    println!("\n- The error that Rollbar raised was:\n{:?}", res);
-                    println!("\n- The message that Rollbar returned was:\n{}", body);
-                    println!("\n- The error that your application raised was:\n{}", payload);
+                    if status.0 != hyper::status::StatusCode::Ok {
+                        print!("Your application raised an error:\n{}\n\n", payload);
+
+                        println!("Error while sending a report to Rollbar.");
+                        print!("The error returned by Rollbar was: {}.\n\n", status.to_string());
+                    }
+
+                    Some(status)
                 },
-                Err(e) => {
-                    println!("- Error while sending a report to Rollbar.");
-                    println!("\n- The error that Rollbar raised was:\n{:?}", e);
-                    println!("\n- The error that your application raised was:\n{}", payload);
+                Err(err) => {
+                    print!("Your application raised an error:\n{}\n\n", payload);
+
+                    println!("Error while sending a report to Rollbar.");
+                    print!("The error returned by Rollbar was: {:?}.\n\n", err);
+
+                    None
                 }
             }
-        }).join();
+        })
+    }
+}
+
+#[derive(Debug)]
+pub struct ResponseStatus(hyper::status::StatusCode);
+
+impl From<hyper::status::StatusCode> for ResponseStatus {
+    fn from(status_code: hyper::status::StatusCode) -> ResponseStatus {
+        ResponseStatus(status_code)
+    }
+}
+
+impl ResponseStatus {
+    pub fn description(&self) -> &str {
+        match self.0.to_u16() {
+            200 => "The item was accepted for processing.",
+            400 => "No JSON payload was found, or it could not be decoded.",
+            401 => "No access token was found in the request.",
+            403 => "Check that your `access_token` is valid, enabled, and has the correct scope. The response will contain a `message` key explaining the problem.",
+            413 => "Max payload size is 128kb. Try removing or truncating unnecessary large data included in the payload, like whole binary files or long strings.",
+            422 => "A syntactically valid JSON payload was found, but it had one or more semantic errors. The response will contain a `message` key describing the errors.",
+            429 => "Request dropped because the rate limit has been reached for this access token, or the account is on the Free plan and the plan limit has been reached.",
+            500 => "There was an error on Rollbar's end",
+            _   => "An undefined error occurred."
+        }
+    }
+
+    pub fn canonical_reason(&self) -> String {
+        format!("{}", self.0)
+    }
+}
+
+impl fmt::Display for ResponseStatus {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Error {}: {}", self.canonical_reason(), self.description())
     }
 }
 
@@ -530,5 +567,23 @@ mod tests {
         }).to_string();
 
         assert_eq!(payload, expected_payload);
+    }
+
+    #[test]
+    fn test_response() {
+        let client = Client::new("ACCESS_TOKEN", "ENVIRONMENT");
+
+        let status_handle = client.build_report()
+            .with_level("info")
+            .from_message("hai")
+            .send();
+
+        match status_handle.join().unwrap() {
+            Some(status) => {
+                assert_eq!(status.to_string(),
+                    "Error 401 Unauthorized: No access token was found in the request.".to_owned());
+            },
+            None => { assert!(false); }
+        }
     }
 }

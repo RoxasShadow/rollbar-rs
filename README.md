@@ -31,6 +31,5 @@ Check the source to check what are the macros used in the example files actually
 can fill the reports with more informations.
 
 ## TODO
-- Support Rollbar responses natively with proper structs
 - Support more Rollbar fields in the payload
-- Doc
+- Documentation
