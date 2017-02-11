@@ -5,7 +5,9 @@ extern crate hyper_openssl;
 extern crate backtrace;
 
 use std::io::Read;
-use std::{panic, thread, fmt};
+use std::thread;
+use std::fmt::Debug;
+use std::panic::PanicInfo;
 use std::borrow::ToOwned;
 use std::sync::Arc;
 use backtrace::Backtrace;
@@ -15,7 +17,9 @@ macro_rules! report_error {
     ($client:ident, $err:ident) => {
         let backtrace = backtrace::Backtrace::new();
         $client.build_report()
-            .report($err, &backtrace);
+            .with_backtrace(&backtrace)
+            .from_error(&$err)
+            .send();
     }
 }
 
@@ -24,9 +28,10 @@ macro_rules! report_panics {
     ($client:ident) => {
         std::panic::set_hook(Box::new(move |panic_info| {
             let backtrace = backtrace::Backtrace::new();
-            let error = rollbar::Error::from_panic(panic_info, &backtrace)
-                .build_payload(&$client.build_report());
-            $client.send(error);
+            $client.build_report()
+                .with_backtrace(&backtrace)
+                .from_panic(panic_info)
+                .send();
         }));
     }
 }
@@ -34,8 +39,10 @@ macro_rules! report_panics {
 #[macro_export]
 macro_rules! report_message {
     ($client:ident, $message:expr) => {
-        $client.send($message.build_payload(
-            $client.build_report().with_level("info")));
+        $client.build_report()
+            .with_level(rollbar::Level::INFO)
+            .from_message($message)
+            .send();
     }
 }
 
@@ -95,15 +102,21 @@ impl Default for Error {
 }
 
 impl Error {
-    fn from<T: fmt::Debug>(error: T, backtrace: &Backtrace) -> Error {
+    fn from<T: Debug>(error: T, backtrace: Option<&Backtrace>) -> Error {
+        let error_message = format!("{:?}", error);
+        let description = match backtrace {
+            Some(backtrace) => format!("{:?}", backtrace),
+            None => error_message.to_owned()
+        };
+
         Error {
-            message: format!("{:?}", error),
-            description: format!("{:?}", backtrace),
+            message: error_message,
+            description: description,
             ..Default::default()
         }
     }
 
-    pub fn from_panic(panic_info: &panic::PanicInfo, backtrace: &Backtrace) -> Error {
+    pub fn from_panic(panic_info: &PanicInfo, backtrace: Option<&Backtrace>) -> Error {
         let payload = panic_info.payload();
         let error_message = match payload.downcast_ref::<&str>() {
             Some(s) => *s,
@@ -113,20 +126,25 @@ impl Error {
             }
         };
 
+        let description = match backtrace {
+            Some(backtrace) => format!("{:?}", backtrace),
+            None => error_message.to_string()
+        };
+
         match panic_info.location() {
             Some(location) => {
                 Error {
                     filename: location.file().to_owned(),
                     line_number: location.line().to_owned(),
                     message: error_message.to_string(),
-                    description: format!("{:?}", backtrace),
+                    description: description,
                     ..Default::default()
                 }
             },
             None => {
                 Error {
                     message: error_message.to_string(),
-                    description: format!("{:?}", backtrace),
+                    description: description,
                     ..Default::default()
                 }
             }
@@ -199,20 +217,95 @@ const URL: &'static str = "https://api.rollbar.com/api/1/item/";
 pub struct ReportBuilder<'a> {
     client: &'a Client,
     level: Option<Level>,
-    send_strategy: Option<Box<Fn(Arc<hyper::Client>, String)>>
+    send_strategy: Option<Box<Fn(Arc<hyper::Client>, String)>>,
+    backtrace: Option<&'a Backtrace>
+}
+
+pub struct ReportPanicBuilder<'a> {
+    report_builder: &'a ReportBuilder<'a>,
+    panic_info: &'a PanicInfo<'a>
+}
+
+impl<'a> ReportPanicBuilder<'a> {
+    pub fn send(&mut self) {
+        let client = self.report_builder.client;
+        let payload = Error::from_panic(self.panic_info, self.report_builder.backtrace)
+            .build_payload(&client.build_report());
+
+        match self.report_builder.send_strategy {
+            Some(ref send_strategy) => {
+                let http_client = client.http_client.clone();
+                send_strategy(http_client, payload);
+            },
+            None => { client.send(payload); }
+        };
+    }
+}
+
+pub struct ReportErrorBuilder<'a, T: 'a + Debug> {
+    report_builder: &'a ReportBuilder<'a>,
+    error: &'a T
+}
+
+impl<'a, T: Debug + Clone> ReportErrorBuilder<'a, T> {
+    pub fn send(&mut self) {
+        let client = self.report_builder.client;
+        let payload = Error::from(self.error.clone(), self.report_builder.backtrace)
+            .build_payload(self.report_builder);
+
+        match self.report_builder.send_strategy {
+            Some(ref send_strategy) => {
+                let http_client = client.http_client.clone();
+                send_strategy(http_client, payload);
+            },
+            None => { client.send(payload); }
+        };
+    }
+}
+
+pub struct ReportMessageBuilder<'a> {
+    report_builder: &'a ReportBuilder<'a>,
+    message: &'a str
+}
+
+impl<'a> ReportMessageBuilder<'a> {
+    pub fn send(&mut self) {
+        let client = self.report_builder.client;
+
+        match self.report_builder.send_strategy {
+            Some(ref send_strategy) => {
+                let http_client = client.http_client.clone();
+                send_strategy(http_client, self.message.to_owned());
+            },
+            None => { client.send(self.message.to_owned()); }
+        };
+    }
 }
 
 impl<'a> ReportBuilder<'a> {
-    pub fn report<T: fmt::Debug>(&mut self, error: T, backtrace: &Backtrace) -> &mut Self {
-        let payload = Error::from(error, backtrace).build_payload(&self);
+    pub fn from_panic(&'a mut self, panic_info: &'a PanicInfo) -> ReportPanicBuilder<'a> {
+        ReportPanicBuilder {
+            report_builder: self,
+            panic_info: panic_info
+        }
+    }
 
-        match self.send_strategy {
-            Some(ref send_strategy) => {
-                let http_client = self.client.http_client.clone();
-                send_strategy(http_client, payload);
-            },
-            None => { self.client.send(payload); }
-        };
+    pub fn from_error<T: Debug>(&'a mut self, error: &'a T) -> ReportErrorBuilder<'a, T> {
+        ReportErrorBuilder {
+            report_builder: self,
+            error: error
+        }
+    }
+
+    pub fn from_message(&'a mut self, message: &'a str) -> ReportMessageBuilder<'a> {
+        ReportMessageBuilder {
+            report_builder: self,
+            message: message
+        }
+    }
+
+    pub fn with_backtrace(&mut self, backtrace: &'a Backtrace) -> &mut Self {
+        self.backtrace = Some(backtrace);
         self
     }
 
@@ -249,7 +342,8 @@ impl Client {
         ReportBuilder {
             client: self,
             level: None,
-            send_strategy: None
+            send_strategy: None,
+            backtrace: None
         }
     }
 
@@ -303,10 +397,10 @@ mod tests {
             let client = Client::new("ACCESS_TOKEN", "ENVIRONMENT");
             panic::set_hook(Box::new(move |panic_info| {
                 let backtrace = Backtrace::new();
-                let error = Error::from_panic(panic_info, &backtrace).build_payload(
-                    client.build_report().with_level("info"));
-                let error = Arc::new(Mutex::new(error));
-                tx.lock().unwrap().send(error).unwrap();
+                let payload = Error::from_panic(panic_info, Some(&backtrace))
+                    .build_payload(&client.build_report().with_level("info"));
+                let payload = Arc::new(Mutex::new(payload));
+                tx.lock().unwrap().send(payload).unwrap();
             }));
 
             let result = panic::catch_unwind(|| {
@@ -375,7 +469,9 @@ mod tests {
 
                         assert_eq!(expected_payload.to_string(), payload.to_string());
                     }))
-                    .report(e, &backtrace);
+                    .with_backtrace(&backtrace)
+                    .from_error(&e)
+                    .send();
             }
         }
     }
