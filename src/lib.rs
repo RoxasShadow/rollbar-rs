@@ -4,8 +4,10 @@ extern crate hyper;
 extern crate hyper_openssl;
 extern crate backtrace;
 
+use std::thread;
 use std::io::Read;
-use std::{panic, thread, fmt};
+use std::fmt::Debug;
+use std::panic::PanicInfo;
 use std::borrow::ToOwned;
 use std::sync::Arc;
 use backtrace::Backtrace;
@@ -15,7 +17,11 @@ macro_rules! report_error {
     ($client:ident, $err:ident) => {
         let backtrace = backtrace::Backtrace::new();
         $client.build_report()
-            .report($err, &backtrace);
+            .with_backtrace(&backtrace)
+            .with_line_number(line!())
+            .with_file_name(file!())
+            .from_error(&$err)
+            .send();
     }
 }
 
@@ -24,9 +30,10 @@ macro_rules! report_panics {
     ($client:ident) => {
         std::panic::set_hook(Box::new(move |panic_info| {
             let backtrace = backtrace::Backtrace::new();
-            let error = rollbar::Error::from_panic(panic_info, &backtrace)
-                .build_payload(&$client.build_report());
-            $client.send(error);
+            $client.build_report()
+                .with_backtrace(&backtrace)
+                .from_panic(panic_info)
+                .send();
         }));
     }
 }
@@ -34,11 +41,14 @@ macro_rules! report_panics {
 #[macro_export]
 macro_rules! report_message {
     ($client:ident, $message:expr) => {
-        $client.send($message.build_payload(
-            $client.build_report().with_level("info")));
+        $client.build_report()
+            .with_level(rollbar::Level::INFO)
+            .from_message($message)
+            .send();
     }
 }
 
+#[derive(Clone)]
 pub enum Level {
     CRITICAL,
     ERROR,
@@ -71,40 +81,44 @@ impl ToString for Level {
     }
 }
 
-pub struct Error {
-    filename: String,
-    line_number: u32,
-    class: String,
-    message: String,
-    description: String
+// https://rollbar.com/docs/api/items_post/
+const URL: &'static str = "https://api.rollbar.com/api/1/item/";
+
+pub struct ReportBuilder<'a> {
+    client: &'a Client,
+    send_strategy: Option<Box<Fn(Arc<hyper::Client>, String)>>,
+
+    level: Option<Level>,
+    backtrace: Option<&'a Backtrace>,
+    line_number: Option<u32>,
+    filename: Option<&'static str>
 }
 
-impl Default for Error {
-    fn default() -> Error {
-        let thread = thread::current();
-        let thread = thread.name().unwrap_or("unnamed");
+pub struct ReportPanicBuilder<'a> {
+    report_builder: &'a ReportBuilder<'a>,
+    panic_info: &'a PanicInfo<'a>
+}
 
-        Error {
-            filename: String::new(),
-            line_number: 0,
-            class: thread.to_owned(),
-            message: String::new(),
-            description: String::new()
-        }
+impl<'a> ReportPanicBuilder<'a> {
+    pub fn send(&mut self) {
+        let client = self.report_builder.client;
+
+        match self.report_builder.send_strategy {
+            Some(ref send_strategy) => {
+                let http_client = client.http_client.to_owned();
+                send_strategy(http_client, self.to_string());
+            },
+            None => { client.send(self.to_string()); }
+        };
     }
 }
 
-impl Error {
-    fn from<T: fmt::Debug>(error: T, backtrace: &Backtrace) -> Error {
-        Error {
-            message: format!("{:?}", error),
-            description: format!("{:?}", backtrace),
-            ..Default::default()
-        }
-    }
+impl<'a> ToString for ReportPanicBuilder<'a> {
+    fn to_string(&self) -> String {
+        let report_builder = self.report_builder;
+        let client = report_builder.client;
 
-    pub fn from_panic(panic_info: &panic::PanicInfo, backtrace: &Backtrace) -> Error {
-        let payload = panic_info.payload();
+        let payload = self.panic_info.payload();
         let error_message = match payload.downcast_ref::<&str>() {
             Some(s) => *s,
             None => match payload.downcast_ref::<String>() {
@@ -113,38 +127,73 @@ impl Error {
             }
         };
 
-        match panic_info.location() {
+        let frame = match self.panic_info.location() {
             Some(location) => {
-                Error {
-                    filename: location.file().to_owned(),
-                    line_number: location.line().to_owned(),
-                    message: error_message.to_string(),
-                    description: format!("{:?}", backtrace),
-                    ..Default::default()
-                }
+                json!({
+                    "filename": location.file().to_owned(),
+                    "lineno": location.line().to_owned()
+                })
             },
             None => {
-                Error {
-                    message: error_message.to_string(),
-                    description: format!("{:?}", backtrace),
-                    ..Default::default()
-                }
+                json!({
+                    "filename": report_builder.filename.unwrap_or(""),
+                    "lineno": report_builder.line_number.unwrap_or(0),
+                })
             }
-        }
+        };
+
+        json!({
+            "access_token": client.access_token,
+            "data": {
+                "environment": client.environment,
+                "body": {
+                    "trace": {
+                        "frames": [frame],
+                        "exception": {
+                            "class": thread::current().name().unwrap_or("unnamed"),
+                            "message": error_message,
+                            "description": match report_builder.backtrace {
+                                Some(backtrace) => format!("{:?}", backtrace),
+                                None => error_message.to_owned()
+                            }
+                        }
+                    }
+                },
+                "level": report_builder.level
+                    .to_owned()
+                    .unwrap_or(Level::ERROR)
+                    .to_string(),
+                "language": "rust"
+            }
+        }).to_string()
     }
 }
 
-pub trait ErrorToPayload {
-    fn build_payload(&self, report_builder: &ReportBuilder) -> String;
+pub struct ReportErrorBuilder<'a, T: 'a + Debug> {
+    report_builder: &'a ReportBuilder<'a>,
+    error: &'a T
 }
 
-pub trait MessageToPayload {
-    fn build_payload(&self, report_builder: &ReportBuilder) -> String;
+impl<'a, T: Debug> ReportErrorBuilder<'a, T> {
+    pub fn send(&mut self) {
+        let client = self.report_builder.client;
+
+        match self.report_builder.send_strategy {
+            Some(ref send_strategy) => {
+                let http_client = client.http_client.to_owned();
+                send_strategy(http_client, self.to_string());
+            },
+            None => { client.send(self.to_string()); }
+        };
+    }
 }
 
-impl ErrorToPayload for Error {
-    fn build_payload(&self, report_builder: &ReportBuilder) -> String {
+impl<'a, T: Debug> ToString for ReportErrorBuilder<'a, T> {
+    fn to_string(&self) -> String {
+        let report_builder = self.report_builder;
         let client = report_builder.client;
+        let error_message = format!("{:?}", self.error);
+
         json!({
             "access_token": client.access_token,
             "data": {
@@ -152,67 +201,105 @@ impl ErrorToPayload for Error {
                 "body": {
                     "trace": {
                         "frames": [{
-                            "filename": self.filename,
-                            "lineno": self.line_number
+                            "filename": report_builder.filename.unwrap_or(""),
+                            "lineno": report_builder.line_number.unwrap_or(0)
                         }],
                         "exception": {
-                            "class": self.class,
-                            "message": self.message,
-                            "description": self.description
+                            "class": thread::current().name().unwrap_or("unnamed"),
+                            "message": error_message,
+                            "description": match report_builder.backtrace {
+                                Some(backtrace) => format!("{:?}", backtrace),
+                                None => error_message.to_owned()
+                            }
                         }
                     }
                 },
-                "level": match report_builder.level {
-                    Some(ref level) => level.to_string(),
-                    None => Level::ERROR.to_string()
-                },
+                "level": report_builder.level
+                    .to_owned()
+                    .unwrap_or(Level::ERROR)
+                    .to_string(),
                 "language": "rust"
             }
         }).to_string()
     }
 }
 
-impl<'a> MessageToPayload for &'a str {
-    fn build_payload(&self, report_builder: &ReportBuilder) -> String {
+pub struct ReportMessageBuilder<'a> {
+    report_builder: &'a ReportBuilder<'a>,
+    message: &'a str
+}
+
+impl<'a> ReportMessageBuilder<'a> {
+    pub fn send(&mut self) {
+        let client = self.report_builder.client;
+
+        match self.report_builder.send_strategy {
+            Some(ref send_strategy) => {
+                let http_client = client.http_client.to_owned();
+                send_strategy(http_client, self.to_string());
+            },
+            None => { client.send(self.to_string()); }
+        };
+    }
+}
+
+impl<'a> ToString for ReportMessageBuilder<'a> {
+    fn to_string(&self) -> String {
+        let report_builder = self.report_builder;
         let client = report_builder.client;
+
         json!({
             "access_token": client.access_token,
             "data": {
                 "body": {
                     "environment": client.environment,
                     "message": {
-                        "body": self
+                        "body": self.message
                     }
                 },
-                "level": match report_builder.level {
-                    Some(ref level) => level.to_string(),
-                    None => Level::ERROR.to_string()
-                }
+                "level": report_builder.level
+                    .to_owned()
+                    .unwrap_or(Level::INFO)
+                    .to_string()
             }
         }).to_string()
     }
 }
 
-// https://rollbar.com/docs/api/items_post/
-const URL: &'static str = "https://api.rollbar.com/api/1/item/";
-
-pub struct ReportBuilder<'a> {
-    client: &'a Client,
-    level: Option<Level>,
-    send_strategy: Option<Box<Fn(Arc<hyper::Client>, String)>>
-}
-
 impl<'a> ReportBuilder<'a> {
-    pub fn report<T: fmt::Debug>(&mut self, error: T, backtrace: &Backtrace) -> &mut Self {
-        let payload = Error::from(error, backtrace).build_payload(&self);
+    pub fn from_panic(&'a mut self, panic_info: &'a PanicInfo) -> ReportPanicBuilder<'a> {
+        ReportPanicBuilder {
+            report_builder: self,
+            panic_info: panic_info
+        }
+    }
 
-        match self.send_strategy {
-            Some(ref send_strategy) => {
-                let http_client = self.client.http_client.clone();
-                send_strategy(http_client, payload);
-            },
-            None => { self.client.send(payload); }
-        };
+    pub fn from_error<T: Debug>(&'a mut self, error: &'a T) -> ReportErrorBuilder<'a, T> {
+        ReportErrorBuilder {
+            report_builder: self,
+            error: error
+        }
+    }
+
+    pub fn from_message(&'a mut self, message: &'a str) -> ReportMessageBuilder<'a> {
+        ReportMessageBuilder {
+            report_builder: self,
+            message: message
+        }
+    }
+
+    pub fn with_backtrace(&mut self, backtrace: &'a Backtrace) -> &mut Self {
+        self.backtrace = Some(backtrace);
+        self
+    }
+
+    pub fn with_line_number(&mut self, line_number: u32) -> &mut Self {
+        self.line_number = Some(line_number);
+        self
+    }
+
+    pub fn with_file_name(&mut self, filename: &'static str) -> &mut Self {
+        self.filename = Some(filename);
         self
     }
 
@@ -248,13 +335,16 @@ impl Client {
     pub fn build_report(&self) -> ReportBuilder {
         ReportBuilder {
             client: self,
+            send_strategy: None,
             level: None,
-            send_strategy: None
+            backtrace: None,
+            line_number: None,
+            filename: None
         }
     }
 
     pub fn send(&self, payload: String) {
-        let http_client = self.http_client.clone();
+        let http_client = self.http_client.to_owned();
 
         let _ = thread::spawn(move || {
             let res = http_client.post(URL).body(&*payload).send();
@@ -286,7 +376,7 @@ mod tests {
     extern crate backtrace;
 
     use std::panic;
-    use super::{Client, Level, Error, MessageToPayload, ErrorToPayload};
+    use super::{Client, Level};
     use std::sync::{Arc, Mutex};
     use std::sync::mpsc::channel;
     use backtrace::Backtrace;
@@ -303,10 +393,13 @@ mod tests {
             let client = Client::new("ACCESS_TOKEN", "ENVIRONMENT");
             panic::set_hook(Box::new(move |panic_info| {
                 let backtrace = Backtrace::new();
-                let error = Error::from_panic(panic_info, &backtrace).build_payload(
-                    client.build_report().with_level("info"));
-                let error = Arc::new(Mutex::new(error));
-                tx.lock().unwrap().send(error).unwrap();
+                let payload = client.build_report()
+                    .with_backtrace(&backtrace)
+                    .with_level("info")
+                    .from_panic(panic_info)
+                    .to_string();
+                let payload = Arc::new(Mutex::new(payload));
+                tx.lock().unwrap().send(payload).unwrap();
             }));
 
             let result = panic::catch_unwind(|| {
@@ -351,7 +444,7 @@ mod tests {
     }
 
     #[test]
-    fn test_report_match() {
+    fn test_report_error() {
         let client = Client::new("ACCESS_TOKEN", "ENVIRONMENT");
 
         match "笑".parse::<i32>() {
@@ -362,10 +455,10 @@ mod tests {
                 client.build_report()
                     .with_level(Level::ERROR)
                     .with_send_strategy(Box::new(|_, payload| {
-                        // we're gonna ignore ignore the backtrace
+                        // we're gonna ignore the backtrace
                         let mut payload: serde_json::Value = serde_json::from_str(&*payload).unwrap();
                         let     expected_payload: serde_json::Value = serde_json::from_str(
-                            r#"{"access_token":"ACCESS_TOKEN","data":{"body":{"trace":{"exception":{"class":"tests::test_report_match","description":"ParseIntError { kind: InvalidDigit }","message":"ParseIntError { kind: InvalidDigit }"},"frames":[{"filename":"","lineno":0}]}},"environment":"ENVIRONMENT","language":"rust","level":"error"}}"#
+                            r#"{"access_token":"ACCESS_TOKEN","data":{"body":{"trace":{"exception":{"class":"tests::test_report_error","description":"ParseIntError { kind: InvalidDigit }","message":"ParseIntError { kind: InvalidDigit }"},"frames":[{"filename":"","lineno":0}]}},"environment":"ENVIRONMENT","language":"rust","level":"error"}}"#
                         ).unwrap();
                         *payload.get_mut("data").unwrap()
                             .get_mut("body").unwrap()
@@ -375,19 +468,24 @@ mod tests {
 
                         assert_eq!(expected_payload.to_string(), payload.to_string());
                     }))
-                    .report(e, &backtrace);
+                    .with_backtrace(&backtrace)
+                    .from_error(&e)
+                    .send();
             }
         }
     }
 
-
     #[test]
     fn test_payload_string() {
         let client = Client::new("ACCESS_TOKEN", "ENVIRONMENT");
-        let report = client.build_report();
+        let payload = client.build_report()
+            .with_level("info")
+            .from_message("hai")
+            .to_string();
+
         assert_eq!(
-            "hai".build_payload(&report),
-            r#"{"access_token":"ACCESS_TOKEN","data":{"body":{"environment":"ENVIRONMENT","message":{"body":"hai"}},"level":"error"}}"#
+            payload,
+            r#"{"access_token":"ACCESS_TOKEN","data":{"body":{"environment":"ENVIRONMENT","message":{"body":"hai"}},"level":"info"}}"#
         );
     }
 }
