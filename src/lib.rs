@@ -10,6 +10,35 @@ use std::borrow::ToOwned;
 use std::sync::Arc;
 use backtrace::Backtrace;
 
+#[macro_export]
+macro_rules! report_error {
+    ($client:ident, $err:ident) => {
+        let backtrace = backtrace::Backtrace::new();
+        $client.build_report()
+            .report($err, &backtrace);
+    }
+}
+
+#[macro_export]
+macro_rules! report_panics {
+    ($client:ident) => {
+        std::panic::set_hook(Box::new(move |panic_info| {
+            let backtrace = backtrace::Backtrace::new();
+            let error = rollbar::Error::from_panic(panic_info, &backtrace)
+                .build_payload(&$client.build_report());
+            $client.send(error);
+        }));
+    }
+}
+
+#[macro_export]
+macro_rules! report_message {
+    ($client:ident, $message:expr) => {
+        $client.send($message.build_payload(
+            $client.build_report().with_level("info")));
+    }
+}
+
 pub enum Level {
     CRITICAL,
     ERROR,
