@@ -1,3 +1,5 @@
+//! Track and report errors, exceptions and messages from your Rust application to Rollbar.
+
 #[macro_use] extern crate serde_json;
 extern crate hyper;
 extern crate hyper_openssl;
@@ -8,6 +10,7 @@ use std::borrow::ToOwned;
 use std::sync::Arc;
 use backtrace::Backtrace;
 
+/// Report an error. Any type that implements `fmt::Debug` is accepted.
 #[macro_export]
 macro_rules! report_error {
     ($client:ident, $err:ident) => {
@@ -23,6 +26,7 @@ macro_rules! report_error {
     }
 }
 
+/// Set a global hook for the `panic`s your application could raise.
 #[macro_export]
 macro_rules! report_panics {
     ($client:ident) => {
@@ -36,6 +40,7 @@ macro_rules! report_panics {
     }
 }
 
+/// Send a plain text message to Rollbar with severity level `INFO`.
 #[macro_export]
 macro_rules! report_message {
     ($client:ident, $message:expr) => {
@@ -46,6 +51,8 @@ macro_rules! report_message {
     }
 }
 
+/// Variants for setting the severity level.
+/// If not specified, the default value is `ERROR`.
 #[derive(Clone)]
 pub enum Level {
     CRITICAL,
@@ -82,6 +89,7 @@ impl ToString for Level {
 // https://rollbar.com/docs/api/items_post/
 const URL: &'static str = "https://api.rollbar.com/api/1/item/";
 
+/// Builder for a generic request to Rollbar.
 pub struct ReportBuilder<'a> {
     client: &'a Client,
     send_strategy: Option<Box<Fn(Arc<hyper::Client>, String) -> thread::JoinHandle<Option<ResponseStatus>>>>,
@@ -92,6 +100,7 @@ pub struct ReportBuilder<'a> {
     filename: Option<&'static str>
 }
 
+/// Builder specialized for reporting panics.
 pub struct ReportPanicBuilder<'a> {
     report_builder: &'a ReportBuilder<'a>,
     panic_info: &'a panic::PanicInfo<'a>
@@ -167,6 +176,7 @@ impl<'a> ToString for ReportPanicBuilder<'a> {
     }
 }
 
+/// Builder specialized for reporting errors.
 pub struct ReportErrorBuilder<'a, T: 'a + fmt::Debug> {
     report_builder: &'a ReportBuilder<'a>,
     error: &'a T
@@ -222,6 +232,7 @@ impl<'a, T: fmt::Debug> ToString for ReportErrorBuilder<'a, T> {
     }
 }
 
+/// Builder specialized for reporting messages.
 pub struct ReportMessageBuilder<'a> {
     report_builder: &'a ReportBuilder<'a>,
     message: &'a str
@@ -265,6 +276,7 @@ impl<'a> ToString for ReportMessageBuilder<'a> {
 }
 
 impl<'a> ReportBuilder<'a> {
+    /// To be used when a panic report must be sent.
     pub fn from_panic(&'a mut self, panic_info: &'a panic::PanicInfo) -> ReportPanicBuilder<'a> {
         ReportPanicBuilder {
             report_builder: self,
@@ -272,6 +284,8 @@ impl<'a> ReportBuilder<'a> {
         }
     }
 
+    /// To be used when a error must be reported.
+    /// Any type that implements `fmt::Debug` is accepted.
     pub fn from_error<T: fmt::Debug>(&'a mut self, error: &'a T) -> ReportErrorBuilder<'a, T> {
         ReportErrorBuilder {
             report_builder: self,
@@ -279,6 +293,7 @@ impl<'a> ReportBuilder<'a> {
         }
     }
 
+    /// To be used when a message must be tracked by Rollbar.
     pub fn from_message(&'a mut self, message: &'a str) -> ReportMessageBuilder<'a> {
         ReportMessageBuilder {
             report_builder: self,
@@ -286,32 +301,38 @@ impl<'a> ReportBuilder<'a> {
         }
     }
 
+    /// Attach a `backtrace::Backtrace` to the `description` of the report.
     pub fn with_backtrace(&mut self, backtrace: &'a Backtrace) -> &mut Self {
         self.backtrace = Some(backtrace);
         self
     }
 
+    /// Set the number of the line in which an error occurred.
     pub fn with_line_number(&mut self, line_number: u32) -> &mut Self {
         self.line_number = Some(line_number);
         self
     }
 
+    /// Tell the origin of the error by adding the file name to the report.
     pub fn with_file_name(&mut self, filename: &'static str) -> &mut Self {
         self.filename = Some(filename);
         self
     }
 
+    /// Set the security level of the report. `Level::ERROR` is the default value
     pub fn with_level<T>(&'a mut self, level: T) -> &'a mut Self where T: Into<Level> {
         self.level = Some(level.into());
         self
     }
 
+    /// Use given function to send a request to Rollbar instead of the built-in one.
     pub fn with_send_strategy(&'a mut self, send_strategy: Box<Fn(Arc<hyper::Client>, String) -> thread::JoinHandle<Option<ResponseStatus>>>) -> &'a mut Self {
         self.send_strategy = Some(send_strategy);
         self
     }
 }
 
+/// The access point to the library.
 pub struct Client {
     http_client: Arc<hyper::Client>,
     access_token: String,
@@ -319,6 +340,13 @@ pub struct Client {
 }
 
 impl Client {
+    /// Create a new `Client`.
+    ///
+    /// Your available `environment`s are listed at
+    /// <https://rollbar.com/{your_organization}/{your_app}/settings/general>.
+    ///
+    /// You can get the `access_token` at
+    /// <https://rollbar.com/{your_organization}/{your_app}/settings/access_tokens>.
     pub fn new<T: Into<String>>(access_token: T, environment: T) -> Client {
         let ssl = hyper_openssl::OpensslClient::new().unwrap();
         let connector = hyper::net::HttpsConnector::new(ssl);
@@ -330,6 +358,7 @@ impl Client {
         }
     }
 
+    /// Create a `ReportBuilder` to build a new report for Rollbar.
     pub fn build_report(&self) -> ReportBuilder {
         ReportBuilder {
             client: self,
@@ -341,7 +370,8 @@ impl Client {
         }
     }
 
-    pub fn send(&self, payload: String) -> thread::JoinHandle<Option<ResponseStatus>> {
+    /// Function used internally to send payloads to Rollbar as default `send_strategy`.
+    fn send(&self, payload: String) -> thread::JoinHandle<Option<ResponseStatus>> {
         let http_client = self.http_client.to_owned();
 
         thread::spawn(move || {
@@ -373,6 +403,7 @@ impl Client {
     }
 }
 
+/// Wrapper for `hyper::status::StatusCode`.
 #[derive(Debug)]
 pub struct ResponseStatus(hyper::status::StatusCode);
 
@@ -383,6 +414,7 @@ impl From<hyper::status::StatusCode> for ResponseStatus {
 }
 
 impl ResponseStatus {
+    /// Return a description provided by Rollbar for the status code returned by each request.
     pub fn description(&self) -> &str {
         match self.0.to_u16() {
             200 => "The item was accepted for processing.",
@@ -397,6 +429,7 @@ impl ResponseStatus {
         }
     }
 
+    /// Return the canonical description for the status code returned by each request.
     pub fn canonical_reason(&self) -> String {
         format!("{}", self.0)
     }

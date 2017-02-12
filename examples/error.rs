@@ -9,4 +9,17 @@ fn main() {
         Ok(_) => { println!("lolnope"); },
         Err(e) => { report_error!(client, e); }
     }
+
+    /* // `report_error!` expands to the following code:
+     * let backtrace = backtrace::Backtrace::new();
+     * let line = line!() - 2;
+     *
+     * client.build_report()
+     *     .with_backtrace(&backtrace)
+     *     .with_line_number(line)
+     *     .with_file_name(file!())
+     *     .from_error(&e)
+     *     .send();
+     * // If you want to customize the report, you might not want to use the macro.
+    */
 }
