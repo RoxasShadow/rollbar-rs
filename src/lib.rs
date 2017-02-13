@@ -205,7 +205,11 @@ pub struct ReportErrorBuilder<'a> {
 
     /// The severity level of the error. `Level::ERROR` is the default value.
     #[serde(skip_serializing_if = "Option::is_none")]
-    level: Option<Level>
+    level: Option<Level>,
+
+    /// The title shown in the dashboard for this report.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    title: Option<String>
 }
 
 impl<'a> ReportErrorBuilder<'a> {
@@ -226,6 +230,9 @@ impl<'a> ReportErrorBuilder<'a> {
         self.level = Some(level.into());
         self
     }
+
+    /// Set the title to show in the dashboard for this report.
+    add_field!(with_title, title, String);
 
     /// Send the report to Rollbar.
     pub fn send(&mut self) -> thread::JoinHandle<Option<ResponseStatus>> {
@@ -256,7 +263,8 @@ impl<'a> ToString for ReportErrorBuilder<'a> {
                     .to_owned()
                     .unwrap_or(Level::ERROR)
                     .to_string(),
-                "language": "rust"
+                "language": "rust",
+                "title": self.title
             }
         }).to_string()
     }
@@ -322,13 +330,14 @@ impl<'a> ReportBuilder<'a> {
         let mut trace = Trace::default();
 
         let payload = panic_info.payload();
-        trace.exception.message = match payload.downcast_ref::<String>() {
+        let message = match payload.downcast_ref::<String>() {
             Some(s) => s.to_owned(),
             None => match payload.downcast_ref::<String>() {
                 Some(s) => s.to_owned(),
                 None => "Box<Any>".to_owned()
             }
         };
+        trace.exception.message = message.to_owned();
         trace.exception.description = trace.exception.message.to_owned();
 
         if let Some(location) = panic_info.location() {
@@ -342,20 +351,23 @@ impl<'a> ReportBuilder<'a> {
         ReportErrorBuilder {
             report_builder: self,
             trace: trace,
-            level: None
+            level: None,
+            title: Some(message.to_owned())
         }
     }
 
     /// To be used when a error must be reported.
     pub fn from_error<T: fmt::Debug>(&'a mut self, error: &'a T) -> ReportErrorBuilder<'a> {
         let mut trace = Trace::default();
-        trace.exception.message = format!("{:?}", error);
+        let message = format!("{:?}", error);
+        trace.exception.message = message.to_owned();
         trace.exception.description = trace.exception.message.to_owned();
 
         ReportErrorBuilder {
             report_builder: self,
             trace: trace,
-            level: None
+            level: None,
+            title: Some(message.to_owned())
         }
     }
 
@@ -583,7 +595,8 @@ mod tests {
                     }
                 },
                 "level": "info",
-                "language": "rust"
+                "language": "rust",
+                "title": "attempt to divide by zero"
             }
         });
 
@@ -647,7 +660,8 @@ mod tests {
                             }
                         },
                         "level": "warning",
-                        "language": "rust"
+                        "language": "rust",
+                        "title": "ParseIntError { kind: InvalidDigit }"
                     }
                 });
 
