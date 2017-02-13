@@ -232,7 +232,10 @@ impl<'a> ReportErrorBuilder<'a> {
     }
 
     /// Set the title to show in the dashboard for this report.
-    add_field!(with_title, title, String);
+    pub fn with_title<T>(&'a mut self, title: T) -> &'a mut Self where T: Into<String> {
+        self.title = Some(title.into());
+        self
+    }
 
     /// Send the report to Rollbar.
     pub fn send(&mut self) -> thread::JoinHandle<Option<ResponseStatus>> {
@@ -637,6 +640,7 @@ mod tests {
                     .with_frame(FrameBuilder::new()
                                 .with_column_number(24)
                                 .build())
+                    .with_title("w")
                     .to_string();
 
                 let mut expected_payload = json!({
@@ -661,7 +665,7 @@ mod tests {
                         },
                         "level": "warning",
                         "language": "rust",
-                        "title": "ParseIntError { kind: InvalidDigit }"
+                        "title": "w"
                     }
                 });
 
