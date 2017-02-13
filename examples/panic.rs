@@ -12,7 +12,7 @@ fn main() {
      *     client.build_report()
      *         .from_panic(panic_info)
      *         .with_backtrace(&backtrace)
-     *         .send();
+     *         .send()
      * }));
      * // If you want to customize the reports, you might not want to use the macro.
     */

@@ -7,7 +7,7 @@ fn main() {
 
     match "笑".parse::<i32>() {
         Ok(_) => { println!("lolnope"); },
-        Err(e) => { report_error!(client, e); }
+        Err(e) => { report_error!(client, e).join(); }
     }
 
     /* // `report_error!` expands to the following code:
@@ -21,7 +21,8 @@ fn main() {
      *                 .with_line_number(line)
      *                 .with_file_name(file!())
      *                 .build())
-     *     .send();
+     *     .send()
+     *     .join();
      * // If you want to customize the report, you might not want to use the macro.
     */
 }

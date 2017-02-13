@@ -15,7 +15,7 @@ use backtrace::Backtrace;
 /// Report an error. Any type that implements `fmt::Debug` is accepted.
 #[macro_export]
 macro_rules! report_error {
-    ($client:ident, $err:ident) => {
+    ($client:ident, $err:ident) => {{
         let backtrace = backtrace::Backtrace::new();
         let line = line!() - 2;
 
@@ -26,33 +26,33 @@ macro_rules! report_error {
                         .with_line_number(line)
                         .with_file_name(file!())
                         .build())
-            .send();
-    }
+            .send()
+    }}
 }
 
 /// Set a global hook for the `panic`s your application could raise.
 #[macro_export]
 macro_rules! report_panics {
-    ($client:ident) => {
+    ($client:ident) => {{
         std::panic::set_hook(Box::new(move |panic_info| {
             let backtrace = backtrace::Backtrace::new();
             $client.build_report()
                 .from_panic(panic_info)
                 .with_backtrace(&backtrace)
                 .send();
-        }));
-    }
+        }))
+    }}
 }
 
 /// Send a plain text message to Rollbar with severity level `INFO`.
 #[macro_export]
 macro_rules! report_message {
-    ($client:ident, $message:expr) => {
+    ($client:ident, $message:expr) => {{
         $client.build_report()
             .from_message($message)
             .with_level(rollbar::Level::INFO)
-            .send();
-    }
+            .send()
+    }}
 }
 
 macro_rules! add_field {
