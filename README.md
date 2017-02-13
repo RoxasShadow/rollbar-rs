@@ -23,6 +23,3 @@ Check the documentation to understand how you can add or modify one or more fiel
 sent to Rollbar. Generally, all the methods whose names starts with `with_` or `from_` is what you need.
 
 You can easily generate the documentation locally by running `$ cargo doc` and then `$ open target/doc/rollbar/index.html`.
-
-## TODO
-- Support more Rollbar fields in the payload
