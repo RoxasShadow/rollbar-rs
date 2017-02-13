@@ -7,10 +7,9 @@ fn main() {
 
     /* // `report_message!` expands to the following code:
      * client.build_report()
-     *     .with_level(rollbar::Level::INFO)
      *     .from_message("hai")
+     *     .with_level(rollbar::Level::INFO)
      *     .send();
      * // If you want to customize the message, you might not want to use the macro.
     */
-
 }
