@@ -7,7 +7,7 @@ fn main() {
 
     match "笑".parse::<i32>() {
         Ok(_) => { println!("lolnope"); },
-        Err(e) => { report_error!(client, e).join(); }
+        Err(e) => { let _ = report_error!(client, e).join(); }
     }
 
     /* // `report_error!` expands to the following code:
