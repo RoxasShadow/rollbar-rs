@@ -1,18 +1,20 @@
 [package]
 name    = "rollbar"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Giovanni Capuano <webmaster@giovannicapuano.net"]
 
 repository  = "https://github.com/RoxasShadow/rollbar-rs"
 license     = "BSD-2-Clause"
 
-description = "Exception tracking and logging from Rust to Rollbar."
+description = "Track and report errors, exceptions and messages from your Rust application to Rollbar."
 keywords    = ["rollbar", "logging", "errors", "exceptions"]
 
 [dependencies]
+backtrace = "0.2"
+
 hyper = "0.10"
 hyper-openssl = "0.2"
+
 serde = "0.9"
 serde_json = "0.9"
 serde_derive = "0.9"
-backtrace = "0.2"
