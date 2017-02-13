@@ -10,8 +10,8 @@ fn main() {
      * std::panic::set_hook(Box::new(move |panic_info| {
      *     let backtrace = backtrace::Backtrace::new();
      *     client.build_report()
-     *         .with_backtrace(&backtrace)
      *         .from_panic(panic_info)
+     *         .with_backtrace(&backtrace)
      *         .send();
      * }));
      * // If you want to customize the reports, you might not want to use the macro.

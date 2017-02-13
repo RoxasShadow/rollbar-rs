@@ -15,10 +15,12 @@ fn main() {
      * let line = line!() - 2;
      *
      * client.build_report()
-     *     .with_backtrace(&backtrace)
-     *     .with_line_number(line)
-     *     .with_file_name(file!())
      *     .from_error(&e)
+     *     .with_backtrace(&backtrace)
+     *     .with_frame(rollbar::FrameBuilder::new()
+     *                 .with_line_number(line)
+     *                 .with_file_name(file!())
+     *                 .build())
      *     .send();
      * // If you want to customize the report, you might not want to use the macro.
     */
