@@ -1,6 +1,7 @@
 # rollbar-rs
 [![Build Status](https://travis-ci.org/benashford/rs-es.svg?branch=master)](https://travis-ci.org/benashford/rs-es)
 [![](https://meritbadge.herokuapp.com/rollbar)](https://crates.io/crates/rollbar)
+[![](https://img.shields.io/badge/docs-latest-brightgreen.svg?style=flat)](https://roxasshadow.github.io/rollbar-rs)
 
 Track and report errors, exceptions and messages from your Rust application to [Rollbar](https://rollbar.com/).
 
@@ -19,7 +20,6 @@ Manual logging could be useful when you want to handle errors in your applicatio
 `examples/error.rs` shows how to deal with errors, while `examples/message.rs` is for plain text reports.
 
 ### Customize the reports
-Check the documentation to understand how you can add or modify one or more fields in the reports that will be
-sent to Rollbar. Generally, all the methods whose names starts with `with_` or `from_` is what you need.
-
-You can easily generate the documentation locally by running `$ cargo doc` and then `$ open target/doc/rollbar/index.html`.
+Check the [documentation](https://roxasshadow.github.io/rollbar-rs) to understand how you can add or modify
+one or more fields in the reports that will be sent to Rollbar. Generally, all the methods whose names starts
+with `with_` or `from_` is what you need.
