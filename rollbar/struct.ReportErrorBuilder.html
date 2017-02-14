@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `ReportErrorBuilder` struct in crate `rollbar`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, ReportErrorBuilder">
+
+    <title>rollbar::ReportErrorBuilder - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../normalize.css">
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='index.html'>rollbar</a></p><script>window.sidebarCurrent = {name: 'ReportErrorBuilder', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='index.html'>rollbar</a>::<wbr><a class='struct' href=''>ReportErrorBuilder</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a class='srclink' href='../src/rollbar/lib.rs.html#199-213' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct ReportErrorBuilder&lt;'a&gt; { /* fields omitted */ }</pre><div class='docblock'><p>Builder specialized for reporting errors.</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl&lt;'a&gt; <a class='struct' href='../rollbar/struct.ReportErrorBuilder.html' title='rollbar::ReportErrorBuilder'>ReportErrorBuilder</a>&lt;'a&gt;</code></span><span class='out-of-band'><div class='ghost'></div><a class='srclink' href='../src/rollbar/lib.rs.html#215-252' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.with_backtrace' class='method'><span id='with_backtrace.v' class='invisible'><code>fn <a href='#method.with_backtrace' class='fnname'>with_backtrace</a>(&amp;'a mut self, backtrace: &amp;'a <a class='struct' href='../backtrace/capture/struct.Backtrace.html' title='backtrace::capture::Backtrace'>Backtrace</a>) -&gt; &amp;'a mut Self</code></span></h4>
+<div class='docblock'><p>Attach a <code>backtrace::Backtrace</code> to the <code>description</code> of the report.</p>
+</div><h4 id='method.with_frame' class='method'><span id='with_frame.v' class='invisible'><code>fn <a href='#method.with_frame' class='fnname'>with_frame</a>(&amp;'a mut self, frame_builder: <a class='struct' href='../rollbar/struct.FrameBuilder.html' title='rollbar::FrameBuilder'>FrameBuilder</a>&lt;'a&gt;) -&gt; &amp;'a mut Self</code></span></h4>
+<div class='docblock'><p>Add a new frame to the collection of stack frames.</p>
+</div><h4 id='method.with_level' class='method'><span id='with_level.v' class='invisible'><code>fn <a href='#method.with_level' class='fnname'>with_level</a>&lt;T&gt;(&amp;'a mut self, level: T) -&gt; &amp;'a mut Self <span class='where fmt-newline'>where T: <a class='trait' href='https://doc.rust-lang.org/nightly/core/convert/trait.Into.html' title='core::convert::Into'>Into</a>&lt;<a class='enum' href='../rollbar/enum.Level.html' title='rollbar::Level'>Level</a>&gt;</span></code></span></h4>
+<div class='docblock'><p>Set the security level of the report. <code>Level::ERROR</code> is the default value.</p>
+</div><h4 id='method.with_title' class='method'><span id='with_title.v' class='invisible'><code>fn <a href='#method.with_title' class='fnname'>with_title</a>&lt;T&gt;(&amp;'a mut self, title: T) -&gt; &amp;'a mut Self <span class='where fmt-newline'>where T: <a class='trait' href='https://doc.rust-lang.org/nightly/core/convert/trait.Into.html' title='core::convert::Into'>Into</a>&lt;<a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>&gt;</span></code></span></h4>
+<div class='docblock'><p>Set the title to show in the dashboard for this report.</p>
+</div><h4 id='method.send' class='method'><span id='send.v' class='invisible'><code>fn <a href='#method.send' class='fnname'>send</a>(&amp;mut self) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/std/thread/struct.JoinHandle.html' title='std::thread::JoinHandle'>JoinHandle</a>&lt;<a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='struct' href='../rollbar/struct.ResponseStatus.html' title='rollbar::ResponseStatus'>ResponseStatus</a>&gt;&gt;</code></span></h4>
+<div class='docblock'><p>Send the report to Rollbar.</p>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl&lt;'a&gt; <a class='trait' href='https://doc.rust-lang.org/nightly/collections/string/trait.ToString.html' title='collections::string::ToString'>ToString</a> for <a class='struct' href='../rollbar/struct.ReportErrorBuilder.html' title='rollbar::ReportErrorBuilder'>ReportErrorBuilder</a>&lt;'a&gt;</code></span><span class='out-of-band'><div class='ghost'></div><a class='srclink' href='../src/rollbar/lib.rs.html#254-274' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.to_string' class='method'><span id='to_string.v' class='invisible'><code>fn <a href='https://doc.rust-lang.org/nightly/collections/string/trait.ToString.html#tymethod.to_string' class='fnname'>to_string</a>(&amp;self) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a></code></span></h4>
+<div class='docblock'><p>Converts the given value to a <code>String</code>. <a href="https://doc.rust-lang.org/nightly/collections/string/trait.ToString.html#tymethod.to_string">Read more</a></p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../";
+        window.currentCrate = "rollbar";
+    </script>
+    <script src="../jquery.js"></script>
+    <script src="../main.js"></script>
+    <script defer src="../search-index.js"></script>
+</body>
+</html>
