@@ -4,18 +4,14 @@ extern crate backtrace;
 
 fn main() {
     let client = rollbar::Client::new("ACCESS_TOKEN", "ENVIRONMENT");
+    let _ = report_error_message!(client, "＿|￣|○").join();
 
-    match "笑".parse::<i32>() {
-        Ok(_) => { println!("lolnope"); },
-        Err(e) => { let _ = report_error!(client, e).join(); }
-    }
-
-    /* // `report_error!` expands to the following code:
+    /* // `report_error_message!` expands to the following code:
      * let backtrace = backtrace::Backtrace::new();
-     * let line = line!() - 2;
+     * let line = line!();
      *
      * client.build_report()
-     *     .from_error(&e)
+     *     .from_error_message("＿|￣|○")
      *     .with_frame(rollbar::FrameBuilder::new()
      *                 .with_line_number(line)
      *                 .with_file_name(file!())

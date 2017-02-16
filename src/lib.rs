@@ -7,12 +7,12 @@ extern crate hyper;
 extern crate hyper_openssl;
 extern crate backtrace;
 
-use std::{thread, fmt, panic};
+use std::{thread, fmt, panic, error};
 use std::borrow::ToOwned;
 use std::sync::Arc;
 use backtrace::{Backtrace, Symbol};
 
-/// Report a error. Any type that implements `error::Error` is accepted.
+/// Report an error. Any type that implements `error::Error` is accepted.
 #[macro_export]
 macro_rules! report_error {
     ($client:ident, $err:ident) => {{
@@ -21,11 +21,29 @@ macro_rules! report_error {
 
         $client.build_report()
             .from_error(&$err)
-            .with_backtrace(&backtrace)
             .with_frame(rollbar::FrameBuilder::new()
                         .with_line_number(line)
                         .with_file_name(file!())
                         .build())
+            .with_backtrace(&backtrace)
+            .send()
+    }}
+}
+
+/// Report an error message. Any type that implements `fmt::Display` is accepted.
+#[macro_export]
+macro_rules! report_error_message {
+    ($client:ident, $err:expr) => {{
+        let backtrace = backtrace::Backtrace::new();
+        let line = line!();
+
+        $client.build_report()
+            .from_error_message(&$err)
+            .with_frame(rollbar::FrameBuilder::new()
+                        .with_line_number(line)
+                        .with_file_name(file!())
+                        .build())
+            .with_backtrace(&backtrace)
             .send()
     }}
 }
@@ -378,8 +396,8 @@ impl<'a> ReportBuilder<'a> {
         }
     }
 
-    /// To be used when a error must be reported.
-    pub fn from_error<E: std::error::Error>(&'a mut self, error: &'a E) -> ReportErrorBuilder<'a> {
+    /// To be used when an `error::Error` must be reported.
+    pub fn from_error<E: error::Error>(&'a mut self, error: &'a E) -> ReportErrorBuilder<'a> {
         let mut trace = Trace::default();
         trace.exception.message = error.description().to_owned();
         trace.exception.description = error.cause().map_or_else(|| format!("{:?}", error), |c| format!("{:?}", c));
@@ -389,6 +407,22 @@ impl<'a> ReportBuilder<'a> {
             trace: trace,
             level: None,
             title: Some(format!("{}", error))
+        }
+    }
+
+    /// To be used when a error message must be reported.
+    pub fn from_error_message<T: fmt::Display>(&'a mut self, error_message: &'a T) -> ReportErrorBuilder<'a> {
+        let message = format!("{}", error_message);
+
+        let mut trace = Trace::default();
+        trace.exception.message = message.to_owned();
+        trace.exception.description = message.to_owned();
+
+        ReportErrorBuilder {
+            report_builder: self,
+            trace: trace,
+            level: None,
+            title: Some(message)
         }
     }
 
@@ -526,15 +560,16 @@ mod tests {
     use serde_json::Value;
 
     macro_rules! normalize_frames {
-        ($payload:expr, $expected_payload:expr, $backtrace:ident) => {
+        ($payload:expr, $expected_payload:expr, $expected_frames:expr) => {
             // check the description/backtrace is is not empty and also check
             // that it is different from the message and then ignore it from now on
-            let description = $payload.get("data").unwrap()
+            let payload_ = $payload.to_owned();
+            let description = payload_.get("data").unwrap()
                 .get("body").unwrap()
                 .get("trace").unwrap()
                 .get("exception").unwrap()
                 .get("description").unwrap();
-            let message = $payload.get("data").unwrap()
+            let message = payload_.get("data").unwrap()
                 .get("body").unwrap()
                 .get("trace").unwrap()
                 .get("exception").unwrap()
@@ -549,15 +584,12 @@ mod tests {
                 _ => assert!(false)
             }
 
-            if $backtrace {
-                assert!(description != message);
-            }
-
-            *$expected_payload.get_mut("data").unwrap()
+            $payload.get_mut("data").unwrap()
                 .get_mut("body").unwrap()
                 .get_mut("trace").unwrap()
-                .get_mut("exception").unwrap()
-                .get_mut("description").unwrap() = description.to_owned();
+                .get_mut("frames").unwrap()
+                .as_array_mut().unwrap()
+                .truncate($expected_frames);
         }
     }
 
@@ -597,7 +629,7 @@ mod tests {
             Err(poisoned) => poisoned.into_inner(),
         };
 
-        let payload: Value = serde_json::from_str(&*payload).unwrap();
+        let mut payload: Value = serde_json::from_str(&*payload).unwrap();
         let mut expected_payload = json!({
             "access_token": "ACCESS_TOKEN",
             "data": {
@@ -611,7 +643,7 @@ mod tests {
                         "exception": {
                             "class": "tests::test_report_panics",
                             "message": "attempt to divide by zero",
-                            "description": "<backtrace>"
+                            "description": "attempt to divide by zero"
                         }
                     }
                 },
@@ -621,7 +653,8 @@ mod tests {
             }
         });
 
-        let line_number = payload.get("data").unwrap()
+        let payload_ = payload.to_owned();
+        let line_number = payload_.get("data").unwrap()
             .get("body").unwrap()
             .get("trace").unwrap()
             .get("frames").unwrap()
@@ -638,7 +671,7 @@ mod tests {
             .get_mut("lineno").unwrap() = line_number.to_owned();
 
 
-        normalize_frames!(payload, expected_payload, true);
+        normalize_frames!(payload, expected_payload, 1);
         assert_eq!(expected_payload.to_string(), payload.to_string());
     }
 
@@ -650,7 +683,7 @@ mod tests {
             Ok(_) => { assert!(false); },
             Err(e) => {
                 let payload = client.build_report()
-                    .from_error(&e)
+                    .from_error_message(&e)
                     .with_level(Level::WARNING)
                     .with_frame(FrameBuilder::new()
                                 .with_column_number(42)
@@ -661,7 +694,7 @@ mod tests {
                     .with_title("w")
                     .to_string();
 
-                let mut expected_payload = json!({
+                let expected_payload = json!({
                     "access_token": "ACCESS_TOKEN",
                     "data": {
                         "environment": "ENVIRONMENT",
@@ -676,8 +709,8 @@ mod tests {
                                 }],
                                 "exception": {
                                     "class": "tests::test_report_error",
-                                    "message": "ParseIntError { kind: InvalidDigit }",
-                                    "description": "ParseIntError { kind: InvalidDigit }"
+                                    "message": "invalid digit found in string",
+                                    "description": "invalid digit found in string"
                                 }
                             }
                         },
@@ -687,8 +720,8 @@ mod tests {
                     }
                 });
 
-                let payload: Value = serde_json::from_str(&*payload).unwrap();
-                normalize_frames!( payload, &mut expected_payload, false);
+                let mut payload: Value = serde_json::from_str(&*payload).unwrap();
+                normalize_frames!(payload, expected_payload, 2);
                 assert_eq!(expected_payload.to_string(), payload.to_string());
             }
         }
