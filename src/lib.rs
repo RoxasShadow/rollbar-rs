@@ -12,7 +12,7 @@ use std::borrow::ToOwned;
 use std::sync::Arc;
 use backtrace::{Backtrace, Symbol};
 
-/// Report an error. Any type that implements `fmt::Debug` is accepted.
+/// Report a error. Any type that implements `error::Error` is accepted.
 #[macro_export]
 macro_rules! report_error {
     ($client:ident, $err:ident) => {{
@@ -232,7 +232,7 @@ impl<'a> ReportErrorBuilder<'a> {
                 // http://alexcrichton.com/backtrace-rs/backtrace/struct.Symbol.html
                 FrameBuilder {
                     file_name: symbol.filename()
-                        .map_or("".to_owned(), |p| format!("{}", p.display())),
+                        .map_or_else(|| "".to_owned(), |p| format!("{}", p.display())),
                     line_number: symbol.lineno(),
                     function_name: symbol.name()
                         .map(|s| format!("{}", s)),
@@ -379,17 +379,16 @@ impl<'a> ReportBuilder<'a> {
     }
 
     /// To be used when a error must be reported.
-    pub fn from_error<T: fmt::Debug>(&'a mut self, error: &'a T) -> ReportErrorBuilder<'a> {
+    pub fn from_error<E: std::error::Error>(&'a mut self, error: &'a E) -> ReportErrorBuilder<'a> {
         let mut trace = Trace::default();
-        let message = format!("{:?}", error);
-        trace.exception.message = message.to_owned();
-        trace.exception.description = trace.exception.message.to_owned();
+        trace.exception.message = error.description().to_owned();
+        trace.exception.description = error.cause().map_or_else(|| format!("{:?}", error), |c| format!("{:?}", c));
 
         ReportErrorBuilder {
             report_builder: self,
             trace: trace,
             level: None,
-            title: Some(message.to_owned())
+            title: Some(format!("{}", error))
         }
     }
 
