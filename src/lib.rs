@@ -10,7 +10,7 @@ extern crate backtrace;
 use std::{thread, fmt, panic};
 use std::borrow::ToOwned;
 use std::sync::Arc;
-use backtrace::Backtrace;
+use backtrace::{Backtrace, Symbol};
 
 /// Report an error. Any type that implements `fmt::Debug` is accepted.
 #[macro_export]
@@ -57,8 +57,17 @@ macro_rules! report_message {
 
 macro_rules! add_field {
     ($n:ident, $f:ident, $t:ty) => (
-        pub fn $n(&'a mut self, val: $t) -> &'a mut Self {
+        pub fn $n(&mut self, val: $t) -> &mut Self {
             self.$f = Some(val);
+            self
+        }
+    );
+}
+
+macro_rules! add_generic_field {
+    ($n:ident, $f:ident, $t:path) => (
+        pub fn $n<T: $t>(&mut self, val: T) -> &mut Self {
+            self.$f = Some(val.into());
             self
         }
     );
@@ -109,14 +118,14 @@ pub struct ReportBuilder<'a> {
 }
 
 /// Wrapper for a trace, payload of a single exception.
-#[derive(Serialize, Default)]
-struct Trace<'a> {
-    frames: Vec<FrameBuilder<'a>>,
+#[derive(Serialize, Default, Debug)]
+struct Trace {
+    frames: Vec<FrameBuilder>,
     exception: Exception
 }
 
 /// Wrapper for an exception, which describes the occurred error.
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 struct Exception {
     class: String,
     message: String,
@@ -134,8 +143,8 @@ impl Default for Exception {
 }
 
 /// Builder for a frame. A collection of frames identifies a stack trace.
-#[derive(Serialize, Default, Clone)]
-pub struct FrameBuilder<'a> {
+#[derive(Serialize, Default, Clone, Debug)]
+pub struct FrameBuilder {
     /// The name of the file in which the error had origin.
     #[serde(rename = "filename")]
     file_name: String,
@@ -153,15 +162,15 @@ pub struct FrameBuilder<'a> {
     /// The method or the function name which caused caused the error.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "method")]
-    function_name: Option<&'a str>,
+    function_name: Option<String>,
 
     /// The line of code which caused caused the error.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "code")]
-    function_code_line: Option<&'a str>,
+    function_code_line: Option<String>,
 }
 
-impl<'a> FrameBuilder<'a> {
+impl<'a> FrameBuilder {
     /// Create a new FrameBuilder.
     pub fn new() -> Self {
         FrameBuilder {
@@ -183,10 +192,10 @@ impl<'a> FrameBuilder<'a> {
     add_field!(with_column_number, column_number, u32);
 
     /// Set the method or the function name which caused caused the error.
-    add_field!(with_function_name, function_name, &'a str);
+    add_generic_field!(with_function_name, function_name, Into<String>);
 
     /// Set the line of code which caused caused the error.
-    add_field!(with_function_code_line, function_code_line, &'a str);
+    add_generic_field!(with_function_code_line, function_code_line, Into<String>);
 
     /// Conclude the creation of the frame.
     pub fn build(&self) -> Self {
@@ -201,7 +210,7 @@ pub struct ReportErrorBuilder<'a> {
     report_builder: &'a ReportBuilder<'a>,
 
     /// The trace containing the stack frames.
-    trace: Trace<'a>,
+    trace: Trace,
 
     /// The severity level of the error. `Level::ERROR` is the default value.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -215,27 +224,40 @@ pub struct ReportErrorBuilder<'a> {
 impl<'a> ReportErrorBuilder<'a> {
     /// Attach a `backtrace::Backtrace` to the `description` of the report.
     pub fn with_backtrace(&'a mut self, backtrace: &'a Backtrace) -> &'a mut Self {
-        self.trace.exception.description = format!("{:?}", backtrace);
+        self.trace.frames.extend(
+            backtrace.frames()
+            .iter()
+            .flat_map(|frames| frames.symbols())
+            .map(|symbol|
+                // http://alexcrichton.com/backtrace-rs/backtrace/struct.Symbol.html
+                FrameBuilder {
+                    file_name: symbol.filename()
+                        .map_or("".to_owned(), |p| format!("{}", p.display())),
+                    line_number: symbol.lineno(),
+                    function_name: symbol.name()
+                        .map(|s| format!("{}", s)),
+                    function_code_line: symbol.addr()
+                        .map(|s| format!("{:?}", s)),
+                    ..Default::default()
+                }
+            )
+            .collect::<Vec<FrameBuilder>>()
+        );
+
         self
     }
 
     /// Add a new frame to the collection of stack frames.
-    pub fn with_frame(&'a mut self, frame_builder: FrameBuilder<'a>) -> &'a mut Self {
+    pub fn with_frame(&'a mut self, frame_builder: FrameBuilder) -> &'a mut Self {
         self.trace.frames.push(frame_builder);
         self
     }
 
     /// Set the security level of the report. `Level::ERROR` is the default value.
-    pub fn with_level<T>(&'a mut self, level: T) -> &'a mut Self where T: Into<Level> {
-        self.level = Some(level.into());
-        self
-    }
+    add_generic_field!(with_level, level, Into<Level>);
 
     /// Set the title to show in the dashboard for this report.
-    pub fn with_title<T>(&'a mut self, title: T) -> &'a mut Self where T: Into<String> {
-        self.title = Some(title.into());
-        self
-    }
+    add_generic_field!(with_title, title, Into<String>);
 
     /// Send the report to Rollbar.
     pub fn send(&mut self) -> thread::JoinHandle<Option<ResponseStatus>> {
@@ -286,10 +308,7 @@ pub struct ReportMessageBuilder<'a> {
 
 impl<'a> ReportMessageBuilder<'a> {
     /// Set the security level of the report. `Level::ERROR` is the default value
-    pub fn with_level<T>(&'a mut self, level: T) -> &'a mut Self where T: Into<Level> {
-        self.level = Some(level.into());
-        self
-    }
+    add_generic_field!(with_level, level, Into<Level>);
 
     /// Send the message to Rollbar.
     pub fn send(&mut self) -> thread::JoinHandle<Option<ResponseStatus>> {
