@@ -3,7 +3,7 @@ extern crate rollbar;
 extern crate backtrace;
 
 fn main() {
-    let client = rollbar::Client::new("ACCESS_TOKEN", "ENVIRONMENT");
+    let client = rollbar::Client::new("0cb278adffae4bc3b3d264217855c130", "ENVIRONMENT");
 
     match "笑".parse::<i32>() {
         Ok(_) => { println!("lolnope"); },
@@ -24,5 +24,6 @@ fn main() {
      *     .send()
      *     .join();
      * // If you want to customize the report, you might not want to use the macro.
+     * // Join the thread only for testing purposes.
     */
 }

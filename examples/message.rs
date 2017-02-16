@@ -12,5 +12,6 @@ fn main() {
      *     .send()
      *     .join();
      * // If you want to customize the message, you might not want to use the macro.
+     * // Join the thread only for testing purposes.
     */
 }
