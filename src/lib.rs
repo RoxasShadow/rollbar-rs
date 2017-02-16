@@ -7,12 +7,12 @@ extern crate hyper;
 extern crate hyper_openssl;
 extern crate backtrace;
 
-use std::{thread, fmt, panic};
+use std::{thread, fmt, panic, error};
 use std::borrow::ToOwned;
 use std::sync::Arc;
-use backtrace::Backtrace;
+use backtrace::{Backtrace, Symbol};
 
-/// Report an error. Any type that implements `fmt::Debug` is accepted.
+/// Report an error. Any type that implements `error::Error` is accepted.
 #[macro_export]
 macro_rules! report_error {
     ($client:ident, $err:ident) => {{
@@ -21,11 +21,29 @@ macro_rules! report_error {
 
         $client.build_report()
             .from_error(&$err)
-            .with_backtrace(&backtrace)
             .with_frame(rollbar::FrameBuilder::new()
                         .with_line_number(line)
                         .with_file_name(file!())
                         .build())
+            .with_backtrace(&backtrace)
+            .send()
+    }}
+}
+
+/// Report an error message. Any type that implements `fmt::Display` is accepted.
+#[macro_export]
+macro_rules! report_error_message {
+    ($client:ident, $err:expr) => {{
+        let backtrace = backtrace::Backtrace::new();
+        let line = line!();
+
+        $client.build_report()
+            .from_error_message(&$err)
+            .with_frame(rollbar::FrameBuilder::new()
+                        .with_line_number(line)
+                        .with_file_name(file!())
+                        .build())
+            .with_backtrace(&backtrace)
             .send()
     }}
 }
@@ -57,8 +75,17 @@ macro_rules! report_message {
 
 macro_rules! add_field {
     ($n:ident, $f:ident, $t:ty) => (
-        pub fn $n(&'a mut self, val: $t) -> &'a mut Self {
+        pub fn $n(&mut self, val: $t) -> &mut Self {
             self.$f = Some(val);
+            self
+        }
+    );
+}
+
+macro_rules! add_generic_field {
+    ($n:ident, $f:ident, $t:path) => (
+        pub fn $n<T: $t>(&mut self, val: T) -> &mut Self {
+            self.$f = Some(val.into());
             self
         }
     );
@@ -109,14 +136,14 @@ pub struct ReportBuilder<'a> {
 }
 
 /// Wrapper for a trace, payload of a single exception.
-#[derive(Serialize, Default)]
-struct Trace<'a> {
-    frames: Vec<FrameBuilder<'a>>,
+#[derive(Serialize, Default, Debug)]
+struct Trace {
+    frames: Vec<FrameBuilder>,
     exception: Exception
 }
 
 /// Wrapper for an exception, which describes the occurred error.
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 struct Exception {
     class: String,
     message: String,
@@ -134,8 +161,8 @@ impl Default for Exception {
 }
 
 /// Builder for a frame. A collection of frames identifies a stack trace.
-#[derive(Serialize, Default, Clone)]
-pub struct FrameBuilder<'a> {
+#[derive(Serialize, Default, Clone, Debug)]
+pub struct FrameBuilder {
     /// The name of the file in which the error had origin.
     #[serde(rename = "filename")]
     file_name: String,
@@ -153,15 +180,15 @@ pub struct FrameBuilder<'a> {
     /// The method or the function name which caused caused the error.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "method")]
-    function_name: Option<&'a str>,
+    function_name: Option<String>,
 
     /// The line of code which caused caused the error.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "code")]
-    function_code_line: Option<&'a str>,
+    function_code_line: Option<String>,
 }
 
-impl<'a> FrameBuilder<'a> {
+impl<'a> FrameBuilder {
     /// Create a new FrameBuilder.
     pub fn new() -> Self {
         FrameBuilder {
@@ -183,10 +210,10 @@ impl<'a> FrameBuilder<'a> {
     add_field!(with_column_number, column_number, u32);
 
     /// Set the method or the function name which caused caused the error.
-    add_field!(with_function_name, function_name, &'a str);
+    add_generic_field!(with_function_name, function_name, Into<String>);
 
     /// Set the line of code which caused caused the error.
-    add_field!(with_function_code_line, function_code_line, &'a str);
+    add_generic_field!(with_function_code_line, function_code_line, Into<String>);
 
     /// Conclude the creation of the frame.
     pub fn build(&self) -> Self {
@@ -201,7 +228,7 @@ pub struct ReportErrorBuilder<'a> {
     report_builder: &'a ReportBuilder<'a>,
 
     /// The trace containing the stack frames.
-    trace: Trace<'a>,
+    trace: Trace,
 
     /// The severity level of the error. `Level::ERROR` is the default value.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -215,27 +242,40 @@ pub struct ReportErrorBuilder<'a> {
 impl<'a> ReportErrorBuilder<'a> {
     /// Attach a `backtrace::Backtrace` to the `description` of the report.
     pub fn with_backtrace(&'a mut self, backtrace: &'a Backtrace) -> &'a mut Self {
-        self.trace.exception.description = format!("{:?}", backtrace);
+        self.trace.frames.extend(
+            backtrace.frames()
+            .iter()
+            .flat_map(|frames| frames.symbols())
+            .map(|symbol|
+                // http://alexcrichton.com/backtrace-rs/backtrace/struct.Symbol.html
+                FrameBuilder {
+                    file_name: symbol.filename()
+                        .map_or_else(|| "".to_owned(), |p| format!("{}", p.display())),
+                    line_number: symbol.lineno(),
+                    function_name: symbol.name()
+                        .map(|s| format!("{}", s)),
+                    function_code_line: symbol.addr()
+                        .map(|s| format!("{:?}", s)),
+                    ..Default::default()
+                }
+            )
+            .collect::<Vec<FrameBuilder>>()
+        );
+
         self
     }
 
     /// Add a new frame to the collection of stack frames.
-    pub fn with_frame(&'a mut self, frame_builder: FrameBuilder<'a>) -> &'a mut Self {
+    pub fn with_frame(&'a mut self, frame_builder: FrameBuilder) -> &'a mut Self {
         self.trace.frames.push(frame_builder);
         self
     }
 
     /// Set the security level of the report. `Level::ERROR` is the default value.
-    pub fn with_level<T>(&'a mut self, level: T) -> &'a mut Self where T: Into<Level> {
-        self.level = Some(level.into());
-        self
-    }
+    add_generic_field!(with_level, level, Into<Level>);
 
     /// Set the title to show in the dashboard for this report.
-    pub fn with_title<T>(&'a mut self, title: T) -> &'a mut Self where T: Into<String> {
-        self.title = Some(title.into());
-        self
-    }
+    add_generic_field!(with_title, title, Into<String>);
 
     /// Send the report to Rollbar.
     pub fn send(&mut self) -> thread::JoinHandle<Option<ResponseStatus>> {
@@ -286,10 +326,7 @@ pub struct ReportMessageBuilder<'a> {
 
 impl<'a> ReportMessageBuilder<'a> {
     /// Set the security level of the report. `Level::ERROR` is the default value
-    pub fn with_level<T>(&'a mut self, level: T) -> &'a mut Self where T: Into<Level> {
-        self.level = Some(level.into());
-        self
-    }
+    add_generic_field!(with_level, level, Into<Level>);
 
     /// Send the message to Rollbar.
     pub fn send(&mut self) -> thread::JoinHandle<Option<ResponseStatus>> {
@@ -359,18 +396,33 @@ impl<'a> ReportBuilder<'a> {
         }
     }
 
-    /// To be used when a error must be reported.
-    pub fn from_error<T: fmt::Debug>(&'a mut self, error: &'a T) -> ReportErrorBuilder<'a> {
+    /// To be used when an `error::Error` must be reported.
+    pub fn from_error<E: error::Error>(&'a mut self, error: &'a E) -> ReportErrorBuilder<'a> {
         let mut trace = Trace::default();
-        let message = format!("{:?}", error);
-        trace.exception.message = message.to_owned();
-        trace.exception.description = trace.exception.message.to_owned();
+        trace.exception.message = error.description().to_owned();
+        trace.exception.description = error.cause().map_or_else(|| format!("{:?}", error), |c| format!("{:?}", c));
 
         ReportErrorBuilder {
             report_builder: self,
             trace: trace,
             level: None,
-            title: Some(message.to_owned())
+            title: Some(format!("{}", error))
+        }
+    }
+
+    /// To be used when a error message must be reported.
+    pub fn from_error_message<T: fmt::Display>(&'a mut self, error_message: &'a T) -> ReportErrorBuilder<'a> {
+        let message = format!("{}", error_message);
+
+        let mut trace = Trace::default();
+        trace.exception.message = message.to_owned();
+        trace.exception.description = message.to_owned();
+
+        ReportErrorBuilder {
+            report_builder: self,
+            trace: trace,
+            level: None,
+            title: Some(message)
         }
     }
 
@@ -508,15 +560,16 @@ mod tests {
     use serde_json::Value;
 
     macro_rules! normalize_frames {
-        ($payload:expr, $expected_payload:expr, $backtrace:ident) => {
+        ($payload:expr, $expected_payload:expr, $expected_frames:expr) => {
             // check the description/backtrace is is not empty and also check
             // that it is different from the message and then ignore it from now on
-            let description = $payload.get("data").unwrap()
+            let payload_ = $payload.to_owned();
+            let description = payload_.get("data").unwrap()
                 .get("body").unwrap()
                 .get("trace").unwrap()
                 .get("exception").unwrap()
                 .get("description").unwrap();
-            let message = $payload.get("data").unwrap()
+            let message = payload_.get("data").unwrap()
                 .get("body").unwrap()
                 .get("trace").unwrap()
                 .get("exception").unwrap()
@@ -531,15 +584,12 @@ mod tests {
                 _ => assert!(false)
             }
 
-            if $backtrace {
-                assert!(description != message);
-            }
-
-            *$expected_payload.get_mut("data").unwrap()
+            $payload.get_mut("data").unwrap()
                 .get_mut("body").unwrap()
                 .get_mut("trace").unwrap()
-                .get_mut("exception").unwrap()
-                .get_mut("description").unwrap() = description.to_owned();
+                .get_mut("frames").unwrap()
+                .as_array_mut().unwrap()
+                .truncate($expected_frames);
         }
     }
 
@@ -579,7 +629,7 @@ mod tests {
             Err(poisoned) => poisoned.into_inner(),
         };
 
-        let payload: Value = serde_json::from_str(&*payload).unwrap();
+        let mut payload: Value = serde_json::from_str(&*payload).unwrap();
         let mut expected_payload = json!({
             "access_token": "ACCESS_TOKEN",
             "data": {
@@ -593,7 +643,7 @@ mod tests {
                         "exception": {
                             "class": "tests::test_report_panics",
                             "message": "attempt to divide by zero",
-                            "description": "<backtrace>"
+                            "description": "attempt to divide by zero"
                         }
                     }
                 },
@@ -603,7 +653,8 @@ mod tests {
             }
         });
 
-        let line_number = payload.get("data").unwrap()
+        let payload_ = payload.to_owned();
+        let line_number = payload_.get("data").unwrap()
             .get("body").unwrap()
             .get("trace").unwrap()
             .get("frames").unwrap()
@@ -620,7 +671,7 @@ mod tests {
             .get_mut("lineno").unwrap() = line_number.to_owned();
 
 
-        normalize_frames!(payload, expected_payload, true);
+        normalize_frames!(payload, expected_payload, 1);
         assert_eq!(expected_payload.to_string(), payload.to_string());
     }
 
@@ -632,7 +683,7 @@ mod tests {
             Ok(_) => { assert!(false); },
             Err(e) => {
                 let payload = client.build_report()
-                    .from_error(&e)
+                    .from_error_message(&e)
                     .with_level(Level::WARNING)
                     .with_frame(FrameBuilder::new()
                                 .with_column_number(42)
@@ -643,7 +694,7 @@ mod tests {
                     .with_title("w")
                     .to_string();
 
-                let mut expected_payload = json!({
+                let expected_payload = json!({
                     "access_token": "ACCESS_TOKEN",
                     "data": {
                         "environment": "ENVIRONMENT",
@@ -658,8 +709,8 @@ mod tests {
                                 }],
                                 "exception": {
                                     "class": "tests::test_report_error",
-                                    "message": "ParseIntError { kind: InvalidDigit }",
-                                    "description": "ParseIntError { kind: InvalidDigit }"
+                                    "message": "invalid digit found in string",
+                                    "description": "invalid digit found in string"
                                 }
                             }
                         },
@@ -669,8 +720,8 @@ mod tests {
                     }
                 });
 
-                let payload: Value = serde_json::from_str(&*payload).unwrap();
-                normalize_frames!( payload, &mut expected_payload, false);
+                let mut payload: Value = serde_json::from_str(&*payload).unwrap();
+                normalize_frames!(payload, expected_payload, 2);
                 assert_eq!(expected_payload.to_string(), payload.to_string());
             }
         }

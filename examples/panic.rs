@@ -12,9 +12,10 @@ fn main() {
      *     client.build_report()
      *         .from_panic(panic_info)
      *         .with_backtrace(&backtrace)
-     *         .send()
+     *         .send();
      * }));
      * // If you want to customize the reports, you might not want to use the macro.
+     * // Join the thread only for testing purposes.
     */
 
     let zero = "0".parse::<i32>().unwrap(); // let's trick the lint a bit!

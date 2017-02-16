@@ -9,8 +9,8 @@ fn main() {
      * client.build_report()
      *     .from_message("hai")
      *     .with_level(rollbar::Level::INFO)
-     *     .send()
-     *     .join();
+     *     .send();
      * // If you want to customize the message, you might not want to use the macro.
+     * // Join the thread only for testing purposes.
     */
 }
