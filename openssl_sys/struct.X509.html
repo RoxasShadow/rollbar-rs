@@ -48,10 +48,12 @@
                    <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                        [<span class='inner'>&#x2212;</span>]
                    </a>
-               </span><a class='srclink' href='../src/openssl_sys/ossl10x.rs.html#241-268' title='goto source code'>[src]</a></span></h1>
+               </span><a class='srclink' href='../src/openssl_sys/ossl10x.rs.html#251-278' title='goto source code'>[src]</a></span></h1>
 <pre class='rust struct'><div class="docblock attributes">#[repr(C)]
 </div>pub struct X509 {
     pub cert_info: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.pointer.html'>*mut </a><a class='struct' href='../openssl_sys/struct.X509_CINF.html' title='openssl_sys::X509_CINF'>X509_CINF</a>,
+    pub sig_alg: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.pointer.html'>*mut </a><a class='struct' href='../openssl_sys/struct.X509_ALGOR.html' title='openssl_sys::X509_ALGOR'>X509_ALGOR</a>,
+    pub signature: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.pointer.html'>*mut </a><a class='enum' href='../openssl_sys/enum.ASN1_BIT_STRING.html' title='openssl_sys::ASN1_BIT_STRING'>ASN1_BIT_STRING</a>,
     pub valid: <a class='type' href='../libc/type.c_int.html' title='libc::c_int'>c_int</a>,
     pub references: <a class='type' href='../libc/type.c_int.html' title='libc::c_int'>c_int</a>,
     pub name: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.pointer.html'>*mut </a><a class='type' href='../libc/unix/bsd/type.c_char.html' title='libc::unix::bsd::c_char'>c_char</a>,
@@ -66,6 +68,12 @@
 }</pre><h2 class='fields'>Fields</h2><span id='structfield.cert_info' class='structfield'>
                            <span id='cert_info.v' class='invisible'>
                            <code>cert_info: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.pointer.html'>*mut </a><a class='struct' href='../openssl_sys/struct.X509_CINF.html' title='openssl_sys::X509_CINF'>X509_CINF</a></code>
+                           </span></span><span class='stab '></span><span id='structfield.sig_alg' class='structfield'>
+                           <span id='sig_alg.v' class='invisible'>
+                           <code>sig_alg: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.pointer.html'>*mut </a><a class='struct' href='../openssl_sys/struct.X509_ALGOR.html' title='openssl_sys::X509_ALGOR'>X509_ALGOR</a></code>
+                           </span></span><span class='stab '></span><span id='structfield.signature' class='structfield'>
+                           <span id='signature.v' class='invisible'>
+                           <code>signature: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.pointer.html'>*mut </a><a class='enum' href='../openssl_sys/enum.ASN1_BIT_STRING.html' title='openssl_sys::ASN1_BIT_STRING'>ASN1_BIT_STRING</a></code>
                            </span></span><span class='stab '></span><span id='structfield.valid' class='structfield'>
                            <span id='valid.v' class='invisible'>
                            <code>valid: <a class='type' href='../libc/type.c_int.html' title='libc::c_int'>c_int</a></code>

@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="rustdoc">
-    <meta name="description" content="Source to the Rust file `/Users/giovanni/.cargo/registry/src/github.com-1ecc6299db9ec823/serde_json-0.9.5/src/value.rs`.">
+    <meta name="description" content="Source to the Rust file `/Users/giovanni/.cargo/registry/src/github.com-1ecc6299db9ec823/serde_json-0.9.6/src/value.rs`.">
     <meta name="keywords" content="rust, rustlang, rust-lang">
 
     <title>value.rs.html -- source</title>
@@ -1673,6 +1673,102 @@
 <span id="1628">1628</span>
 <span id="1629">1629</span>
 <span id="1630">1630</span>
+<span id="1631">1631</span>
+<span id="1632">1632</span>
+<span id="1633">1633</span>
+<span id="1634">1634</span>
+<span id="1635">1635</span>
+<span id="1636">1636</span>
+<span id="1637">1637</span>
+<span id="1638">1638</span>
+<span id="1639">1639</span>
+<span id="1640">1640</span>
+<span id="1641">1641</span>
+<span id="1642">1642</span>
+<span id="1643">1643</span>
+<span id="1644">1644</span>
+<span id="1645">1645</span>
+<span id="1646">1646</span>
+<span id="1647">1647</span>
+<span id="1648">1648</span>
+<span id="1649">1649</span>
+<span id="1650">1650</span>
+<span id="1651">1651</span>
+<span id="1652">1652</span>
+<span id="1653">1653</span>
+<span id="1654">1654</span>
+<span id="1655">1655</span>
+<span id="1656">1656</span>
+<span id="1657">1657</span>
+<span id="1658">1658</span>
+<span id="1659">1659</span>
+<span id="1660">1660</span>
+<span id="1661">1661</span>
+<span id="1662">1662</span>
+<span id="1663">1663</span>
+<span id="1664">1664</span>
+<span id="1665">1665</span>
+<span id="1666">1666</span>
+<span id="1667">1667</span>
+<span id="1668">1668</span>
+<span id="1669">1669</span>
+<span id="1670">1670</span>
+<span id="1671">1671</span>
+<span id="1672">1672</span>
+<span id="1673">1673</span>
+<span id="1674">1674</span>
+<span id="1675">1675</span>
+<span id="1676">1676</span>
+<span id="1677">1677</span>
+<span id="1678">1678</span>
+<span id="1679">1679</span>
+<span id="1680">1680</span>
+<span id="1681">1681</span>
+<span id="1682">1682</span>
+<span id="1683">1683</span>
+<span id="1684">1684</span>
+<span id="1685">1685</span>
+<span id="1686">1686</span>
+<span id="1687">1687</span>
+<span id="1688">1688</span>
+<span id="1689">1689</span>
+<span id="1690">1690</span>
+<span id="1691">1691</span>
+<span id="1692">1692</span>
+<span id="1693">1693</span>
+<span id="1694">1694</span>
+<span id="1695">1695</span>
+<span id="1696">1696</span>
+<span id="1697">1697</span>
+<span id="1698">1698</span>
+<span id="1699">1699</span>
+<span id="1700">1700</span>
+<span id="1701">1701</span>
+<span id="1702">1702</span>
+<span id="1703">1703</span>
+<span id="1704">1704</span>
+<span id="1705">1705</span>
+<span id="1706">1706</span>
+<span id="1707">1707</span>
+<span id="1708">1708</span>
+<span id="1709">1709</span>
+<span id="1710">1710</span>
+<span id="1711">1711</span>
+<span id="1712">1712</span>
+<span id="1713">1713</span>
+<span id="1714">1714</span>
+<span id="1715">1715</span>
+<span id="1716">1716</span>
+<span id="1717">1717</span>
+<span id="1718">1718</span>
+<span id="1719">1719</span>
+<span id="1720">1720</span>
+<span id="1721">1721</span>
+<span id="1722">1722</span>
+<span id="1723">1723</span>
+<span id="1724">1724</span>
+<span id="1725">1725</span>
+<span id="1726">1726</span>
 </pre><pre class='rust '>
 <span class='doccomment'>//! The Value enum, a loosely typed way of representing any valid JSON value.</span>
 <span class='doccomment'>//!</span>
@@ -2175,10 +2271,20 @@
 <span class='doccomment'>/// This trait is sealed and cannot be implemented for types outside of</span>
 <span class='doccomment'>/// `serde_json`.</span>
 <span class='kw'>pub</span> <span class='kw'>trait</span> <span class='ident'>Index</span>: <span class='ident'>private</span>::<span class='ident'>Sealed</span> {
+    <span class='doccomment'>/// Return None if the key is not already in the array or object.</span>
     <span class='attribute'>#[<span class='ident'>doc</span>(<span class='ident'>hidden</span>)]</span>
     <span class='kw'>fn</span> <span class='ident'>index_into</span><span class='op'>&lt;</span><span class='lifetime'>&#39;v</span><span class='op'>&gt;</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>v</span>: <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;v</span> <span class='ident'>Value</span>) <span class='op'>-&gt;</span> <span class='prelude-ty'>Option</span><span class='op'>&lt;</span><span class='kw-2'>&amp;</span><span class='lifetime'>&#39;v</span> <span class='ident'>Value</span><span class='op'>&gt;</span>;
+
+    <span class='doccomment'>/// Return None if the key is not already in the array or object.</span>
     <span class='attribute'>#[<span class='ident'>doc</span>(<span class='ident'>hidden</span>)]</span>
     <span class='kw'>fn</span> <span class='ident'>index_into_mut</span><span class='op'>&lt;</span><span class='lifetime'>&#39;v</span><span class='op'>&gt;</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>v</span>: <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;v</span> <span class='kw-2'>mut</span> <span class='ident'>Value</span>) <span class='op'>-&gt;</span> <span class='prelude-ty'>Option</span><span class='op'>&lt;</span><span class='kw-2'>&amp;</span><span class='lifetime'>&#39;v</span> <span class='kw-2'>mut</span> <span class='ident'>Value</span><span class='op'>&gt;</span>;
+
+    <span class='doccomment'>/// Panic if array index out of bounds. If key is not already in the object,</span>
+    <span class='doccomment'>/// insert it with a value of null. Panic if Value is a type that cannot be</span>
+    <span class='doccomment'>/// indexed into, except if Value is null then it can be treated as an empty</span>
+    <span class='doccomment'>/// object.</span>
+    <span class='attribute'>#[<span class='ident'>doc</span>(<span class='ident'>hidden</span>)]</span>
+    <span class='kw'>fn</span> <span class='ident'>index_or_insert</span><span class='op'>&lt;</span><span class='lifetime'>&#39;v</span><span class='op'>&gt;</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>v</span>: <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;v</span> <span class='kw-2'>mut</span> <span class='ident'>Value</span>) <span class='op'>-&gt;</span> <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;v</span> <span class='kw-2'>mut</span> <span class='ident'>Value</span>;
 }
 
 <span class='kw'>impl</span> <span class='ident'>Index</span> <span class='kw'>for</span> <span class='ident'>usize</span> {
@@ -2192,6 +2298,18 @@
         <span class='kw'>match</span> <span class='kw-2'>*</span><span class='ident'>v</span> {
             <span class='ident'>Value</span>::<span class='ident'>Array</span>(<span class='kw-2'>ref</span> <span class='kw-2'>mut</span> <span class='ident'>vec</span>) <span class='op'>=&gt;</span> <span class='ident'>vec</span>.<span class='ident'>get_mut</span>(<span class='kw-2'>*</span><span class='self'>self</span>),
             _ <span class='op'>=&gt;</span> <span class='prelude-val'>None</span>,
+        }
+    }
+    <span class='kw'>fn</span> <span class='ident'>index_or_insert</span><span class='op'>&lt;</span><span class='lifetime'>&#39;v</span><span class='op'>&gt;</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>v</span>: <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;v</span> <span class='kw-2'>mut</span> <span class='ident'>Value</span>) <span class='op'>-&gt;</span> <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;v</span> <span class='kw-2'>mut</span> <span class='ident'>Value</span> {
+        <span class='kw'>match</span> <span class='kw-2'>*</span><span class='ident'>v</span> {
+            <span class='ident'>Value</span>::<span class='ident'>Array</span>(<span class='kw-2'>ref</span> <span class='kw-2'>mut</span> <span class='ident'>vec</span>) <span class='op'>=&gt;</span> {
+                <span class='kw'>let</span> <span class='ident'>len</span> <span class='op'>=</span> <span class='ident'>vec</span>.<span class='ident'>len</span>();
+                <span class='ident'>vec</span>.<span class='ident'>get_mut</span>(<span class='kw-2'>*</span><span class='self'>self</span>).<span class='ident'>unwrap_or_else</span>(<span class='op'>||</span> {
+                    <span class='macro'>panic</span><span class='macro'>!</span>(<span class='string'>&quot;cannot access index {} of JSON array of length {}&quot;</span>,
+                           <span class='self'>self</span>, <span class='ident'>len</span>)
+                })
+            }
+            _ <span class='op'>=&gt;</span> <span class='macro'>panic</span><span class='macro'>!</span>(<span class='string'>&quot;cannot access index {} of JSON {}&quot;</span>, <span class='self'>self</span>, <span class='ident'>Type</span>(<span class='ident'>v</span>)),
         }
     }
 }
@@ -2209,20 +2327,35 @@
             _ <span class='op'>=&gt;</span> <span class='prelude-val'>None</span>,
         }
     }
+    <span class='kw'>fn</span> <span class='ident'>index_or_insert</span><span class='op'>&lt;</span><span class='lifetime'>&#39;v</span><span class='op'>&gt;</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>v</span>: <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;v</span> <span class='kw-2'>mut</span> <span class='ident'>Value</span>) <span class='op'>-&gt;</span> <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;v</span> <span class='kw-2'>mut</span> <span class='ident'>Value</span> {
+        <span class='kw'>if</span> <span class='kw'>let</span> <span class='ident'>Value</span>::<span class='ident'>Null</span> <span class='op'>=</span> <span class='kw-2'>*</span><span class='ident'>v</span> {
+            <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>map</span> <span class='op'>=</span> <span class='ident'>Map</span>::<span class='ident'>new</span>();
+            <span class='ident'>map</span>.<span class='ident'>insert</span>(<span class='self'>self</span>.<span class='ident'>to_owned</span>(), <span class='ident'>Value</span>::<span class='ident'>Null</span>);
+            <span class='kw-2'>*</span><span class='ident'>v</span> <span class='op'>=</span> <span class='ident'>Value</span>::<span class='ident'>Object</span>(<span class='ident'>map</span>);
+        }
+        <span class='kw'>match</span> <span class='kw-2'>*</span><span class='ident'>v</span> {
+            <span class='ident'>Value</span>::<span class='ident'>Object</span>(<span class='kw-2'>ref</span> <span class='kw-2'>mut</span> <span class='ident'>map</span>) <span class='op'>=&gt;</span> {
+                <span class='comment'>// TODO: use entry() once LinkedHashMap supports entry()</span>
+                <span class='comment'>// https://github.com/contain-rs/linked-hash-map/issues/5</span>
+                <span class='kw'>if</span> <span class='op'>!</span><span class='ident'>map</span>.<span class='ident'>contains_key</span>(<span class='self'>self</span>) {
+                    <span class='ident'>map</span>.<span class='ident'>insert</span>(<span class='self'>self</span>.<span class='ident'>to_owned</span>(), <span class='ident'>Value</span>::<span class='ident'>Null</span>);
+                }
+                <span class='ident'>map</span>.<span class='ident'>get_mut</span>(<span class='self'>self</span>).<span class='ident'>unwrap</span>()
+            }
+            _ <span class='op'>=&gt;</span> <span class='macro'>panic</span><span class='macro'>!</span>(<span class='string'>&quot;cannot access key {:?} in JSON {}&quot;</span>, <span class='self'>self</span>, <span class='ident'>Type</span>(<span class='ident'>v</span>)),
+        }
+    }
 }
 
 <span class='kw'>impl</span> <span class='ident'>Index</span> <span class='kw'>for</span> <span class='ident'>String</span> {
     <span class='kw'>fn</span> <span class='ident'>index_into</span><span class='op'>&lt;</span><span class='lifetime'>&#39;v</span><span class='op'>&gt;</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>v</span>: <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;v</span> <span class='ident'>Value</span>) <span class='op'>-&gt;</span> <span class='prelude-ty'>Option</span><span class='op'>&lt;</span><span class='kw-2'>&amp;</span><span class='lifetime'>&#39;v</span> <span class='ident'>Value</span><span class='op'>&gt;</span> {
-        <span class='kw'>match</span> <span class='kw-2'>*</span><span class='ident'>v</span> {
-            <span class='ident'>Value</span>::<span class='ident'>Object</span>(<span class='kw-2'>ref</span> <span class='ident'>map</span>) <span class='op'>=&gt;</span> <span class='ident'>map</span>.<span class='ident'>get</span>(<span class='self'>self</span>),
-            _ <span class='op'>=&gt;</span> <span class='prelude-val'>None</span>,
-        }
+        <span class='self'>self</span>[..].<span class='ident'>index_into</span>(<span class='ident'>v</span>)
     }
     <span class='kw'>fn</span> <span class='ident'>index_into_mut</span><span class='op'>&lt;</span><span class='lifetime'>&#39;v</span><span class='op'>&gt;</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>v</span>: <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;v</span> <span class='kw-2'>mut</span> <span class='ident'>Value</span>) <span class='op'>-&gt;</span> <span class='prelude-ty'>Option</span><span class='op'>&lt;</span><span class='kw-2'>&amp;</span><span class='lifetime'>&#39;v</span> <span class='kw-2'>mut</span> <span class='ident'>Value</span><span class='op'>&gt;</span> {
-        <span class='kw'>match</span> <span class='kw-2'>*</span><span class='ident'>v</span> {
-            <span class='ident'>Value</span>::<span class='ident'>Object</span>(<span class='kw-2'>ref</span> <span class='kw-2'>mut</span> <span class='ident'>map</span>) <span class='op'>=&gt;</span> <span class='ident'>map</span>.<span class='ident'>get_mut</span>(<span class='self'>self</span>),
-            _ <span class='op'>=&gt;</span> <span class='prelude-val'>None</span>,
-        }
+        <span class='self'>self</span>[..].<span class='ident'>index_into_mut</span>(<span class='ident'>v</span>)
+    }
+    <span class='kw'>fn</span> <span class='ident'>index_or_insert</span><span class='op'>&lt;</span><span class='lifetime'>&#39;v</span><span class='op'>&gt;</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>v</span>: <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;v</span> <span class='kw-2'>mut</span> <span class='ident'>Value</span>) <span class='op'>-&gt;</span> <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;v</span> <span class='kw-2'>mut</span> <span class='ident'>Value</span> {
+        <span class='self'>self</span>[..].<span class='ident'>index_or_insert</span>(<span class='ident'>v</span>)
     }
 }
 
@@ -2233,6 +2366,9 @@
     <span class='kw'>fn</span> <span class='ident'>index_into_mut</span><span class='op'>&lt;</span><span class='lifetime'>&#39;v</span><span class='op'>&gt;</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>v</span>: <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;v</span> <span class='kw-2'>mut</span> <span class='ident'>Value</span>) <span class='op'>-&gt;</span> <span class='prelude-ty'>Option</span><span class='op'>&lt;</span><span class='kw-2'>&amp;</span><span class='lifetime'>&#39;v</span> <span class='kw-2'>mut</span> <span class='ident'>Value</span><span class='op'>&gt;</span> {
         (<span class='kw-2'>*</span><span class='kw-2'>*</span><span class='self'>self</span>).<span class='ident'>index_into_mut</span>(<span class='ident'>v</span>)
     }
+    <span class='kw'>fn</span> <span class='ident'>index_or_insert</span><span class='op'>&lt;</span><span class='lifetime'>&#39;v</span><span class='op'>&gt;</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>v</span>: <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;v</span> <span class='kw-2'>mut</span> <span class='ident'>Value</span>) <span class='op'>-&gt;</span> <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;v</span> <span class='kw-2'>mut</span> <span class='ident'>Value</span> {
+        (<span class='kw-2'>*</span><span class='kw-2'>*</span><span class='self'>self</span>).<span class='ident'>index_or_insert</span>(<span class='ident'>v</span>)
+    }
 }
 
 <span class='comment'>// Prevent users from implementing the Index trait.</span>
@@ -2242,6 +2378,22 @@
     <span class='kw'>impl</span> <span class='ident'>Sealed</span> <span class='kw'>for</span> <span class='ident'>str</span> {}
     <span class='kw'>impl</span> <span class='ident'>Sealed</span> <span class='kw'>for</span> <span class='ident'>String</span> {}
     <span class='kw'>impl</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span>, <span class='ident'>T</span>: <span class='question-mark'>?</span><span class='ident'>Sized</span><span class='op'>&gt;</span> <span class='ident'>Sealed</span> <span class='kw'>for</span> <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='ident'>T</span> <span class='kw'>where</span> <span class='ident'>T</span>: <span class='ident'>Sealed</span> {}
+}
+
+<span class='doccomment'>/// Used in panic messages.</span>
+<span class='kw'>struct</span> <span class='ident'>Type</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span>(<span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='ident'>Value</span>);
+
+<span class='kw'>impl</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span> <span class='ident'>fmt</span>::<span class='ident'>Display</span> <span class='kw'>for</span> <span class='ident'>Type</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span> {
+    <span class='kw'>fn</span> <span class='ident'>fmt</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>formatter</span>: <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>fmt</span>::<span class='ident'>Formatter</span>) <span class='op'>-&gt;</span> <span class='ident'>fmt</span>::<span class='prelude-ty'>Result</span> {
+        <span class='kw'>match</span> <span class='kw-2'>*</span><span class='self'>self</span>.<span class='number'>0</span> {
+            <span class='ident'>Value</span>::<span class='ident'>Null</span> <span class='op'>=&gt;</span> <span class='ident'>formatter</span>.<span class='ident'>write_str</span>(<span class='string'>&quot;null&quot;</span>),
+            <span class='ident'>Value</span>::<span class='ident'>Bool</span>(_) <span class='op'>=&gt;</span> <span class='ident'>formatter</span>.<span class='ident'>write_str</span>(<span class='string'>&quot;boolean&quot;</span>),
+            <span class='ident'>Value</span>::<span class='ident'>Number</span>(_) <span class='op'>=&gt;</span> <span class='ident'>formatter</span>.<span class='ident'>write_str</span>(<span class='string'>&quot;number&quot;</span>),
+            <span class='ident'>Value</span>::<span class='ident'>String</span>(_) <span class='op'>=&gt;</span> <span class='ident'>formatter</span>.<span class='ident'>write_str</span>(<span class='string'>&quot;string&quot;</span>),
+            <span class='ident'>Value</span>::<span class='ident'>Array</span>(_) <span class='op'>=&gt;</span> <span class='ident'>formatter</span>.<span class='ident'>write_str</span>(<span class='string'>&quot;array&quot;</span>),
+            <span class='ident'>Value</span>::<span class='ident'>Object</span>(_) <span class='op'>=&gt;</span> <span class='ident'>formatter</span>.<span class='ident'>write_str</span>(<span class='string'>&quot;object&quot;</span>),
+        }
+    }
 }
 
 <span class='comment'>// The usual semantics of Index is to panic on invalid indexing.</span>
@@ -2298,6 +2450,46 @@
     <span class='kw'>fn</span> <span class='ident'>index</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>index</span>: <span class='ident'>I</span>) <span class='op'>-&gt;</span> <span class='kw-2'>&amp;</span><span class='ident'>Value</span> {
         <span class='kw'>static</span> <span class='ident'>NULL</span>: <span class='ident'>Value</span> <span class='op'>=</span> <span class='ident'>Value</span>::<span class='ident'>Null</span>;
         <span class='ident'>index</span>.<span class='ident'>index_into</span>(<span class='self'>self</span>).<span class='ident'>unwrap_or</span>(<span class='kw-2'>&amp;</span><span class='ident'>NULL</span>)
+    }
+}
+
+<span class='kw'>impl</span><span class='op'>&lt;</span><span class='ident'>I</span><span class='op'>&gt;</span> <span class='ident'>ops</span>::<span class='ident'>IndexMut</span><span class='op'>&lt;</span><span class='ident'>I</span><span class='op'>&gt;</span> <span class='kw'>for</span> <span class='ident'>Value</span> <span class='kw'>where</span> <span class='ident'>I</span>: <span class='ident'>Index</span> {
+    <span class='doccomment'>/// Write into a `serde_json::Value` using the syntax `value[0] = ...` or</span>
+    <span class='doccomment'>/// `value[&quot;k&quot;] = ...`.</span>
+    <span class='doccomment'>///</span>
+    <span class='doccomment'>/// If the index is a number, the value must be an array of length bigger</span>
+    <span class='doccomment'>/// than the index. Indexing into a value that is not an array or an array</span>
+    <span class='doccomment'>/// that is too small will panic.</span>
+    <span class='doccomment'>///</span>
+    <span class='doccomment'>/// If the index is a string, the value must be an object or null which is</span>
+    <span class='doccomment'>/// treated like an empty object. If the key is not already present in the</span>
+    <span class='doccomment'>/// object, it will be inserted with a value of null. Indexing into a value</span>
+    <span class='doccomment'>/// that is neither an object nor null will panic.</span>
+    <span class='doccomment'>///</span>
+    <span class='doccomment'>/// # Examples</span>
+    <span class='doccomment'>///</span>
+    <span class='doccomment'>/// ```rust</span>
+    <span class='doccomment'>/// # #[macro_use] extern crate serde_json;</span>
+    <span class='doccomment'>/// # fn main() {</span>
+    <span class='doccomment'>/// let mut data = json!({ &quot;x&quot;: 0 });</span>
+    <span class='doccomment'>///</span>
+    <span class='doccomment'>/// // replace an existing key</span>
+    <span class='doccomment'>/// data[&quot;x&quot;] = json!(1);</span>
+    <span class='doccomment'>///</span>
+    <span class='doccomment'>/// // insert a new key</span>
+    <span class='doccomment'>/// data[&quot;y&quot;] = json!([false, false, false]);</span>
+    <span class='doccomment'>///</span>
+    <span class='doccomment'>/// // replace an array value</span>
+    <span class='doccomment'>/// data[&quot;y&quot;][0] = json!(true);</span>
+    <span class='doccomment'>///</span>
+    <span class='doccomment'>/// // inserted a deeply nested key</span>
+    <span class='doccomment'>/// data[&quot;a&quot;][&quot;b&quot;][&quot;c&quot;][&quot;d&quot;] = json!(true);</span>
+    <span class='doccomment'>///</span>
+    <span class='doccomment'>/// println!(&quot;{}&quot;, data);</span>
+    <span class='doccomment'>/// # }</span>
+    <span class='doccomment'>/// ```</span>
+    <span class='kw'>fn</span> <span class='ident'>index_mut</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>, <span class='ident'>index</span>: <span class='ident'>I</span>) <span class='op'>-&gt;</span> <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>Value</span> {
+        <span class='ident'>index</span>.<span class='ident'>index_or_insert</span>(<span class='self'>self</span>)
     }
 }
 

@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="rustdoc">
-    <meta name="description" content="Source to the Rust file `/Users/giovanni/.cargo/registry/src/github.com-1ecc6299db9ec823/openssl-0.9.6/src/sign.rs`.">
+    <meta name="description" content="Source to the Rust file `/Users/giovanni/.cargo/registry/src/github.com-1ecc6299db9ec823/openssl-0.9.7/src/sign.rs`.">
     <meta name="keywords" content="rust, rustlang, rust-lang">
 
     <title>sign.rs.html -- source</title>
@@ -464,6 +464,50 @@
 <span id="419">419</span>
 <span id="420">420</span>
 <span id="421">421</span>
+<span id="422">422</span>
+<span id="423">423</span>
+<span id="424">424</span>
+<span id="425">425</span>
+<span id="426">426</span>
+<span id="427">427</span>
+<span id="428">428</span>
+<span id="429">429</span>
+<span id="430">430</span>
+<span id="431">431</span>
+<span id="432">432</span>
+<span id="433">433</span>
+<span id="434">434</span>
+<span id="435">435</span>
+<span id="436">436</span>
+<span id="437">437</span>
+<span id="438">438</span>
+<span id="439">439</span>
+<span id="440">440</span>
+<span id="441">441</span>
+<span id="442">442</span>
+<span id="443">443</span>
+<span id="444">444</span>
+<span id="445">445</span>
+<span id="446">446</span>
+<span id="447">447</span>
+<span id="448">448</span>
+<span id="449">449</span>
+<span id="450">450</span>
+<span id="451">451</span>
+<span id="452">452</span>
+<span id="453">453</span>
+<span id="454">454</span>
+<span id="455">455</span>
+<span id="456">456</span>
+<span id="457">457</span>
+<span id="458">458</span>
+<span id="459">459</span>
+<span id="460">460</span>
+<span id="461">461</span>
+<span id="462">462</span>
+<span id="463">463</span>
+<span id="464">464</span>
+<span id="465">465</span>
 </pre><pre class='rust '>
 <span class='doccomment'>//! Message signatures.</span>
 <span class='doccomment'>//!</span>
@@ -529,27 +573,32 @@
 <span class='doccomment'>//! assert!(memcmp::eq(&amp;hmac, &amp;target));</span>
 <span class='doccomment'>//! ```</span>
 <span class='kw'>use</span> <span class='ident'>ffi</span>;
+<span class='kw'>use</span> <span class='ident'>foreign_types</span>::<span class='ident'>ForeignTypeRef</span>;
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>io</span>::{<span class='self'>self</span>, <span class='ident'>Write</span>};
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>marker</span>::<span class='ident'>PhantomData</span>;
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>ptr</span>;
 
 <span class='kw'>use</span> {<span class='ident'>cvt</span>, <span class='ident'>cvt_p</span>};
 <span class='kw'>use</span> <span class='ident'>hash</span>::<span class='ident'>MessageDigest</span>;
-<span class='kw'>use</span> <span class='ident'>pkey</span>::<span class='ident'>PKeyRef</span>;
+<span class='kw'>use</span> <span class='ident'>pkey</span>::{<span class='ident'>PKeyRef</span>, <span class='ident'>PKeyCtxRef</span>};
 <span class='kw'>use</span> <span class='ident'>error</span>::<span class='ident'>ErrorStack</span>;
-<span class='kw'>use</span> <span class='ident'>types</span>::<span class='ident'>OpenSslTypeRef</span>;
 
 <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>ossl110</span>)]</span>
 <span class='kw'>use</span> <span class='ident'>ffi</span>::{<span class='ident'>EVP_MD_CTX_new</span>, <span class='ident'>EVP_MD_CTX_free</span>};
 <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>any</span>(<span class='ident'>ossl101</span>, <span class='ident'>ossl102</span>))]</span>
 <span class='kw'>use</span> <span class='ident'>ffi</span>::{<span class='ident'>EVP_MD_CTX_create</span> <span class='kw'>as</span> <span class='ident'>EVP_MD_CTX_new</span>, <span class='ident'>EVP_MD_CTX_destroy</span> <span class='kw'>as</span> <span class='ident'>EVP_MD_CTX_free</span>};
 
-<span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>Signer</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span>(<span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>ffi</span>::<span class='ident'>EVP_MD_CTX</span>, <span class='ident'>PhantomData</span><span class='op'>&lt;</span><span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='ident'>PKeyRef</span><span class='op'>&gt;</span>);
+<span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>Signer</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span> {
+    <span class='ident'>md_ctx</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>ffi</span>::<span class='ident'>EVP_MD_CTX</span>,
+    <span class='ident'>pkey_ctx</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>ffi</span>::<span class='ident'>EVP_PKEY_CTX</span>,
+    <span class='ident'>pkey_pd</span>: <span class='ident'>PhantomData</span><span class='op'>&lt;</span><span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='ident'>PKeyRef</span><span class='op'>&gt;</span>,
+}
 
 <span class='kw'>impl</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span> <span class='ident'>Drop</span> <span class='kw'>for</span> <span class='ident'>Signer</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span> {
     <span class='kw'>fn</span> <span class='ident'>drop</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>) {
+        <span class='comment'>// pkey_ctx is owned by the md_ctx, so no need to explicitly free it.</span>
         <span class='kw'>unsafe</span> {
-            <span class='ident'>EVP_MD_CTX_free</span>(<span class='self'>self</span>.<span class='number'>0</span>);
+            <span class='ident'>EVP_MD_CTX_free</span>(<span class='self'>self</span>.<span class='ident'>md_ctx</span>);
         }
     }
 }
@@ -560,8 +609,9 @@
             <span class='ident'>ffi</span>::<span class='ident'>init</span>();
 
             <span class='kw'>let</span> <span class='ident'>ctx</span> <span class='op'>=</span> <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>cvt_p</span>(<span class='ident'>EVP_MD_CTX_new</span>()));
+            <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>pctx</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>ffi</span>::<span class='ident'>EVP_PKEY_CTX</span> <span class='op'>=</span> <span class='ident'>ptr</span>::<span class='ident'>null_mut</span>();
             <span class='kw'>let</span> <span class='ident'>r</span> <span class='op'>=</span> <span class='ident'>ffi</span>::<span class='ident'>EVP_DigestSignInit</span>(<span class='ident'>ctx</span>,
-                                            <span class='ident'>ptr</span>::<span class='ident'>null_mut</span>(),
+                                            <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>pctx</span>,
                                             <span class='ident'>type_</span>.<span class='ident'>as_ptr</span>(),
                                             <span class='ident'>ptr</span>::<span class='ident'>null_mut</span>(),
                                             <span class='ident'>pkey</span>.<span class='ident'>as_ptr</span>());
@@ -569,22 +619,37 @@
                 <span class='ident'>EVP_MD_CTX_free</span>(<span class='ident'>ctx</span>);
                 <span class='kw'>return</span> <span class='prelude-val'>Err</span>(<span class='ident'>ErrorStack</span>::<span class='ident'>get</span>());
             }
-            <span class='prelude-val'>Ok</span>(<span class='ident'>Signer</span>(<span class='ident'>ctx</span>, <span class='ident'>PhantomData</span>))
+
+            <span class='macro'>assert</span><span class='macro'>!</span>(<span class='op'>!</span><span class='ident'>pctx</span>.<span class='ident'>is_null</span>());
+
+            <span class='prelude-val'>Ok</span>(<span class='ident'>Signer</span> {
+                <span class='ident'>md_ctx</span>: <span class='ident'>ctx</span>,
+                <span class='ident'>pkey_ctx</span>: <span class='ident'>pctx</span>,
+                <span class='ident'>pkey_pd</span>: <span class='ident'>PhantomData</span>,
+            })
         }
+    }
+
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>pkey_ctx</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='kw-2'>&amp;</span><span class='ident'>PKeyCtxRef</span> {
+        <span class='kw'>unsafe</span> { <span class='ident'>PKeyCtxRef</span>::<span class='ident'>from_ptr</span>(<span class='self'>self</span>.<span class='ident'>pkey_ctx</span>) }
+    }
+
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>pkey_ctx_mut</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>PKeyCtxRef</span> {
+        <span class='kw'>unsafe</span> { <span class='ident'>PKeyCtxRef</span>::<span class='ident'>from_ptr_mut</span>(<span class='self'>self</span>.<span class='ident'>pkey_ctx</span>) }
     }
 
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>update</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>, <span class='ident'>buf</span>: <span class='kw-2'>&amp;</span>[<span class='ident'>u8</span>]) <span class='op'>-&gt;</span> <span class='prelude-ty'>Result</span><span class='op'>&lt;</span>(), <span class='ident'>ErrorStack</span><span class='op'>&gt;</span> {
         <span class='kw'>unsafe</span> {
-            <span class='ident'>cvt</span>(<span class='ident'>ffi</span>::<span class='ident'>EVP_DigestUpdate</span>(<span class='self'>self</span>.<span class='number'>0</span>, <span class='ident'>buf</span>.<span class='ident'>as_ptr</span>() <span class='kw'>as</span> <span class='kw-2'>*</span><span class='kw'>const</span> _, <span class='ident'>buf</span>.<span class='ident'>len</span>())).<span class='ident'>map</span>(<span class='op'>|</span>_<span class='op'>|</span> ())
+            <span class='ident'>cvt</span>(<span class='ident'>ffi</span>::<span class='ident'>EVP_DigestUpdate</span>(<span class='self'>self</span>.<span class='ident'>md_ctx</span>, <span class='ident'>buf</span>.<span class='ident'>as_ptr</span>() <span class='kw'>as</span> <span class='kw-2'>*</span><span class='kw'>const</span> _, <span class='ident'>buf</span>.<span class='ident'>len</span>())).<span class='ident'>map</span>(<span class='op'>|</span>_<span class='op'>|</span> ())
         }
     }
 
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>finish</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='prelude-ty'>Result</span><span class='op'>&lt;</span><span class='ident'>Vec</span><span class='op'>&lt;</span><span class='ident'>u8</span><span class='op'>&gt;</span>, <span class='ident'>ErrorStack</span><span class='op'>&gt;</span> {
         <span class='kw'>unsafe</span> {
             <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>len</span> <span class='op'>=</span> <span class='number'>0</span>;
-            <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>cvt</span>(<span class='ident'>ffi</span>::<span class='ident'>EVP_DigestSignFinal</span>(<span class='self'>self</span>.<span class='number'>0</span>, <span class='ident'>ptr</span>::<span class='ident'>null_mut</span>(), <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>len</span>)));
+            <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>cvt</span>(<span class='ident'>ffi</span>::<span class='ident'>EVP_DigestSignFinal</span>(<span class='self'>self</span>.<span class='ident'>md_ctx</span>, <span class='ident'>ptr</span>::<span class='ident'>null_mut</span>(), <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>len</span>)));
             <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>buf</span> <span class='op'>=</span> <span class='macro'>vec</span><span class='macro'>!</span>[<span class='number'>0</span>; <span class='ident'>len</span>];
-            <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>cvt</span>(<span class='ident'>ffi</span>::<span class='ident'>EVP_DigestSignFinal</span>(<span class='self'>self</span>.<span class='number'>0</span>, <span class='ident'>buf</span>.<span class='ident'>as_mut_ptr</span>() <span class='kw'>as</span> <span class='kw-2'>*</span><span class='kw-2'>mut</span> _, <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>len</span>)));
+            <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>cvt</span>(<span class='ident'>ffi</span>::<span class='ident'>EVP_DigestSignFinal</span>(<span class='self'>self</span>.<span class='ident'>md_ctx</span>, <span class='ident'>buf</span>.<span class='ident'>as_mut_ptr</span>() <span class='kw'>as</span> <span class='kw-2'>*</span><span class='kw-2'>mut</span> _, <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>len</span>)));
             <span class='comment'>// The advertised length is not always equal to the real length for things like DSA</span>
             <span class='ident'>buf</span>.<span class='ident'>truncate</span>(<span class='ident'>len</span>);
             <span class='prelude-val'>Ok</span>(<span class='ident'>buf</span>)
@@ -603,12 +668,17 @@
     }
 }
 
-<span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>Verifier</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span>(<span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>ffi</span>::<span class='ident'>EVP_MD_CTX</span>, <span class='ident'>PhantomData</span><span class='op'>&lt;</span><span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='ident'>PKeyRef</span><span class='op'>&gt;</span>);
+<span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>Verifier</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span> {
+    <span class='ident'>md_ctx</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>ffi</span>::<span class='ident'>EVP_MD_CTX</span>,
+    <span class='ident'>pkey_ctx</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>ffi</span>::<span class='ident'>EVP_PKEY_CTX</span>,
+    <span class='ident'>pkey_pd</span>: <span class='ident'>PhantomData</span><span class='op'>&lt;</span><span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='ident'>PKeyRef</span><span class='op'>&gt;</span>,
+}
 
 <span class='kw'>impl</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span> <span class='ident'>Drop</span> <span class='kw'>for</span> <span class='ident'>Verifier</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span> {
     <span class='kw'>fn</span> <span class='ident'>drop</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>) {
+        <span class='comment'>// pkey_ctx is owned by the md_ctx, so no need to explicitly free it.</span>
         <span class='kw'>unsafe</span> {
-            <span class='ident'>EVP_MD_CTX_free</span>(<span class='self'>self</span>.<span class='number'>0</span>);
+            <span class='ident'>EVP_MD_CTX_free</span>(<span class='self'>self</span>.<span class='ident'>md_ctx</span>);
         }
     }
 }
@@ -619,8 +689,9 @@
             <span class='ident'>ffi</span>::<span class='ident'>init</span>();
 
             <span class='kw'>let</span> <span class='ident'>ctx</span> <span class='op'>=</span> <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>cvt_p</span>(<span class='ident'>EVP_MD_CTX_new</span>()));
+            <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>pctx</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>ffi</span>::<span class='ident'>EVP_PKEY_CTX</span> <span class='op'>=</span> <span class='ident'>ptr</span>::<span class='ident'>null_mut</span>();
             <span class='kw'>let</span> <span class='ident'>r</span> <span class='op'>=</span> <span class='ident'>ffi</span>::<span class='ident'>EVP_DigestVerifyInit</span>(<span class='ident'>ctx</span>,
-                                              <span class='ident'>ptr</span>::<span class='ident'>null_mut</span>(),
+                                              <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>pctx</span>,
                                               <span class='ident'>type_</span>.<span class='ident'>as_ptr</span>(),
                                               <span class='ident'>ptr</span>::<span class='ident'>null_mut</span>(),
                                               <span class='ident'>pkey</span>.<span class='ident'>as_ptr</span>());
@@ -629,19 +700,33 @@
                 <span class='kw'>return</span> <span class='prelude-val'>Err</span>(<span class='ident'>ErrorStack</span>::<span class='ident'>get</span>());
             }
 
-            <span class='prelude-val'>Ok</span>(<span class='ident'>Verifier</span>(<span class='ident'>ctx</span>, <span class='ident'>PhantomData</span>))
+            <span class='macro'>assert</span><span class='macro'>!</span>(<span class='op'>!</span><span class='ident'>pctx</span>.<span class='ident'>is_null</span>());
+
+            <span class='prelude-val'>Ok</span>(<span class='ident'>Verifier</span> {
+                <span class='ident'>md_ctx</span>: <span class='ident'>ctx</span>,
+                <span class='ident'>pkey_ctx</span>: <span class='ident'>pctx</span>,
+                <span class='ident'>pkey_pd</span>: <span class='ident'>PhantomData</span>,
+            })
         }
+    }
+
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>pkey_ctx</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='kw-2'>&amp;</span><span class='ident'>PKeyCtxRef</span> {
+        <span class='kw'>unsafe</span> { <span class='ident'>PKeyCtxRef</span>::<span class='ident'>from_ptr</span>(<span class='self'>self</span>.<span class='ident'>pkey_ctx</span>) }
+    }
+
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>pkey_ctx_mut</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>PKeyCtxRef</span> {
+        <span class='kw'>unsafe</span> { <span class='ident'>PKeyCtxRef</span>::<span class='ident'>from_ptr_mut</span>(<span class='self'>self</span>.<span class='ident'>pkey_ctx</span>) }
     }
 
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>update</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>, <span class='ident'>buf</span>: <span class='kw-2'>&amp;</span>[<span class='ident'>u8</span>]) <span class='op'>-&gt;</span> <span class='prelude-ty'>Result</span><span class='op'>&lt;</span>(), <span class='ident'>ErrorStack</span><span class='op'>&gt;</span> {
         <span class='kw'>unsafe</span> {
-            <span class='ident'>cvt</span>(<span class='ident'>ffi</span>::<span class='ident'>EVP_DigestUpdate</span>(<span class='self'>self</span>.<span class='number'>0</span>, <span class='ident'>buf</span>.<span class='ident'>as_ptr</span>() <span class='kw'>as</span> <span class='kw-2'>*</span><span class='kw'>const</span> _, <span class='ident'>buf</span>.<span class='ident'>len</span>())).<span class='ident'>map</span>(<span class='op'>|</span>_<span class='op'>|</span> ())
+            <span class='ident'>cvt</span>(<span class='ident'>ffi</span>::<span class='ident'>EVP_DigestUpdate</span>(<span class='self'>self</span>.<span class='ident'>md_ctx</span>, <span class='ident'>buf</span>.<span class='ident'>as_ptr</span>() <span class='kw'>as</span> <span class='kw-2'>*</span><span class='kw'>const</span> _, <span class='ident'>buf</span>.<span class='ident'>len</span>())).<span class='ident'>map</span>(<span class='op'>|</span>_<span class='op'>|</span> ())
         }
     }
 
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>finish</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>signature</span>: <span class='kw-2'>&amp;</span>[<span class='ident'>u8</span>]) <span class='op'>-&gt;</span> <span class='prelude-ty'>Result</span><span class='op'>&lt;</span><span class='ident'>bool</span>, <span class='ident'>ErrorStack</span><span class='op'>&gt;</span> {
         <span class='kw'>unsafe</span> {
-            <span class='kw'>let</span> <span class='ident'>r</span> <span class='op'>=</span> <span class='ident'>EVP_DigestVerifyFinal</span>(<span class='self'>self</span>.<span class='number'>0</span>, <span class='ident'>signature</span>.<span class='ident'>as_ptr</span>() <span class='kw'>as</span> <span class='kw-2'>*</span><span class='kw'>const</span> _, <span class='ident'>signature</span>.<span class='ident'>len</span>());
+            <span class='kw'>let</span> <span class='ident'>r</span> <span class='op'>=</span> <span class='ident'>EVP_DigestVerifyFinal</span>(<span class='self'>self</span>.<span class='ident'>md_ctx</span>, <span class='ident'>signature</span>.<span class='ident'>as_ptr</span>() <span class='kw'>as</span> <span class='kw-2'>*</span><span class='kw'>const</span> _, <span class='ident'>signature</span>.<span class='ident'>len</span>());
             <span class='kw'>match</span> <span class='ident'>r</span> {
                 <span class='number'>1</span> <span class='op'>=&gt;</span> <span class='prelude-val'>Ok</span>(<span class='bool-val'>true</span>),
                 <span class='number'>0</span> <span class='op'>=&gt;</span> {
@@ -686,7 +771,7 @@
     <span class='kw'>use</span> <span class='ident'>sign</span>::{<span class='ident'>Signer</span>, <span class='ident'>Verifier</span>};
     <span class='kw'>use</span> <span class='ident'>ec</span>::{<span class='ident'>EcGroup</span>, <span class='ident'>EcKey</span>};
     <span class='kw'>use</span> <span class='ident'>nid</span>;
-    <span class='kw'>use</span> <span class='ident'>rsa</span>::<span class='ident'>Rsa</span>;
+    <span class='kw'>use</span> <span class='ident'>rsa</span>::{<span class='ident'>Rsa</span>, <span class='ident'>PKCS1_PADDING</span>};
     <span class='kw'>use</span> <span class='ident'>dsa</span>::<span class='ident'>Dsa</span>;
     <span class='kw'>use</span> <span class='ident'>pkey</span>::<span class='ident'>PKey</span>;
 
@@ -721,6 +806,8 @@
         <span class='kw'>let</span> <span class='ident'>pkey</span> <span class='op'>=</span> <span class='ident'>PKey</span>::<span class='ident'>from_rsa</span>(<span class='ident'>private_key</span>).<span class='ident'>unwrap</span>();
 
         <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>signer</span> <span class='op'>=</span> <span class='ident'>Signer</span>::<span class='ident'>new</span>(<span class='ident'>MessageDigest</span>::<span class='ident'>sha256</span>(), <span class='kw-2'>&amp;</span><span class='ident'>pkey</span>).<span class='ident'>unwrap</span>();
+        <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>signer</span>.<span class='ident'>pkey_ctx_mut</span>().<span class='ident'>rsa_padding</span>().<span class='ident'>unwrap</span>(), <span class='ident'>PKCS1_PADDING</span>);
+        <span class='ident'>signer</span>.<span class='ident'>pkey_ctx_mut</span>().<span class='ident'>set_rsa_padding</span>(<span class='ident'>PKCS1_PADDING</span>).<span class='ident'>unwrap</span>();
         <span class='ident'>signer</span>.<span class='ident'>update</span>(<span class='ident'>INPUT</span>).<span class='ident'>unwrap</span>();
         <span class='kw'>let</span> <span class='ident'>result</span> <span class='op'>=</span> <span class='ident'>signer</span>.<span class='ident'>finish</span>().<span class='ident'>unwrap</span>();
 
@@ -734,6 +821,7 @@
         <span class='kw'>let</span> <span class='ident'>pkey</span> <span class='op'>=</span> <span class='ident'>PKey</span>::<span class='ident'>from_rsa</span>(<span class='ident'>private_key</span>).<span class='ident'>unwrap</span>();
 
         <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>verifier</span> <span class='op'>=</span> <span class='ident'>Verifier</span>::<span class='ident'>new</span>(<span class='ident'>MessageDigest</span>::<span class='ident'>sha256</span>(), <span class='kw-2'>&amp;</span><span class='ident'>pkey</span>).<span class='ident'>unwrap</span>();
+        <span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>verifier</span>.<span class='ident'>pkey_ctx_mut</span>().<span class='ident'>rsa_padding</span>().<span class='ident'>unwrap</span>(), <span class='ident'>PKCS1_PADDING</span>);
         <span class='ident'>verifier</span>.<span class='ident'>update</span>(<span class='ident'>INPUT</span>).<span class='ident'>unwrap</span>();
         <span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>verifier</span>.<span class='ident'>finish</span>(<span class='ident'>SIGNATURE</span>).<span class='ident'>unwrap</span>());
     }

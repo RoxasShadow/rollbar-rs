@@ -48,7 +48,7 @@
                    <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                        [<span class='inner'>&#x2212;</span>]
                    </a>
-               </span><a class='srclink' href='../src/rollbar/lib.rs.html#1-721' title='goto source code'>[src]</a></span></h1>
+               </span><a class='srclink' href='../src/rollbar/lib.rs.html#1-772' title='goto source code'>[src]</a></span></h1>
 <div class='docblock'><p>Track and report errors, exceptions and messages from your Rust application to Rollbar.</p>
 </div><h2 id='macros' class='section-header'><a href="#macros">Macros</a></h2>
 <table>
@@ -56,7 +56,14 @@
                            <td><a class='macro' href='macro.report_error.html'
                                   title='rollbar::report_error'>report_error</a></td>
                            <td class='docblock-short'>
-                                <p>Report an error. Any type that implements <code>fmt::Debug</code> is accepted.</p>
+                                <p>Report an error. Any type that implements <code>error::Error</code> is accepted.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='macro' href='macro.report_error_message.html'
+                                  title='rollbar::report_error_message'>report_error_message</a></td>
+                           <td class='docblock-short'>
+                                <p>Report an error message. Any type that implements <code>fmt::Display</code> is accepted.</p>
                            </td>
                        </tr>
                        <tr class=' module-item'>

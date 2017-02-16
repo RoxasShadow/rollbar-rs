@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["CryptoString",""]]});
+initSidebarItems({"type":[["CryptoString",""]]});

@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="rustdoc">
-    <meta name="description" content="Source to the Rust file `/Users/giovanni/.cargo/registry/src/github.com-1ecc6299db9ec823/openssl-sys-0.9.6/src/ossl10x.rs`.">
+    <meta name="description" content="Source to the Rust file `/Users/giovanni/.cargo/registry/src/github.com-1ecc6299db9ec823/openssl-sys-0.9.7/src/ossl10x.rs`.">
     <meta name="keywords" content="rust, rustlang, rust-lang">
 
     <title>ossl10x.rs.html -- source</title>
@@ -741,6 +741,200 @@
 <span id="696">696</span>
 <span id="697">697</span>
 <span id="698">698</span>
+<span id="699">699</span>
+<span id="700">700</span>
+<span id="701">701</span>
+<span id="702">702</span>
+<span id="703">703</span>
+<span id="704">704</span>
+<span id="705">705</span>
+<span id="706">706</span>
+<span id="707">707</span>
+<span id="708">708</span>
+<span id="709">709</span>
+<span id="710">710</span>
+<span id="711">711</span>
+<span id="712">712</span>
+<span id="713">713</span>
+<span id="714">714</span>
+<span id="715">715</span>
+<span id="716">716</span>
+<span id="717">717</span>
+<span id="718">718</span>
+<span id="719">719</span>
+<span id="720">720</span>
+<span id="721">721</span>
+<span id="722">722</span>
+<span id="723">723</span>
+<span id="724">724</span>
+<span id="725">725</span>
+<span id="726">726</span>
+<span id="727">727</span>
+<span id="728">728</span>
+<span id="729">729</span>
+<span id="730">730</span>
+<span id="731">731</span>
+<span id="732">732</span>
+<span id="733">733</span>
+<span id="734">734</span>
+<span id="735">735</span>
+<span id="736">736</span>
+<span id="737">737</span>
+<span id="738">738</span>
+<span id="739">739</span>
+<span id="740">740</span>
+<span id="741">741</span>
+<span id="742">742</span>
+<span id="743">743</span>
+<span id="744">744</span>
+<span id="745">745</span>
+<span id="746">746</span>
+<span id="747">747</span>
+<span id="748">748</span>
+<span id="749">749</span>
+<span id="750">750</span>
+<span id="751">751</span>
+<span id="752">752</span>
+<span id="753">753</span>
+<span id="754">754</span>
+<span id="755">755</span>
+<span id="756">756</span>
+<span id="757">757</span>
+<span id="758">758</span>
+<span id="759">759</span>
+<span id="760">760</span>
+<span id="761">761</span>
+<span id="762">762</span>
+<span id="763">763</span>
+<span id="764">764</span>
+<span id="765">765</span>
+<span id="766">766</span>
+<span id="767">767</span>
+<span id="768">768</span>
+<span id="769">769</span>
+<span id="770">770</span>
+<span id="771">771</span>
+<span id="772">772</span>
+<span id="773">773</span>
+<span id="774">774</span>
+<span id="775">775</span>
+<span id="776">776</span>
+<span id="777">777</span>
+<span id="778">778</span>
+<span id="779">779</span>
+<span id="780">780</span>
+<span id="781">781</span>
+<span id="782">782</span>
+<span id="783">783</span>
+<span id="784">784</span>
+<span id="785">785</span>
+<span id="786">786</span>
+<span id="787">787</span>
+<span id="788">788</span>
+<span id="789">789</span>
+<span id="790">790</span>
+<span id="791">791</span>
+<span id="792">792</span>
+<span id="793">793</span>
+<span id="794">794</span>
+<span id="795">795</span>
+<span id="796">796</span>
+<span id="797">797</span>
+<span id="798">798</span>
+<span id="799">799</span>
+<span id="800">800</span>
+<span id="801">801</span>
+<span id="802">802</span>
+<span id="803">803</span>
+<span id="804">804</span>
+<span id="805">805</span>
+<span id="806">806</span>
+<span id="807">807</span>
+<span id="808">808</span>
+<span id="809">809</span>
+<span id="810">810</span>
+<span id="811">811</span>
+<span id="812">812</span>
+<span id="813">813</span>
+<span id="814">814</span>
+<span id="815">815</span>
+<span id="816">816</span>
+<span id="817">817</span>
+<span id="818">818</span>
+<span id="819">819</span>
+<span id="820">820</span>
+<span id="821">821</span>
+<span id="822">822</span>
+<span id="823">823</span>
+<span id="824">824</span>
+<span id="825">825</span>
+<span id="826">826</span>
+<span id="827">827</span>
+<span id="828">828</span>
+<span id="829">829</span>
+<span id="830">830</span>
+<span id="831">831</span>
+<span id="832">832</span>
+<span id="833">833</span>
+<span id="834">834</span>
+<span id="835">835</span>
+<span id="836">836</span>
+<span id="837">837</span>
+<span id="838">838</span>
+<span id="839">839</span>
+<span id="840">840</span>
+<span id="841">841</span>
+<span id="842">842</span>
+<span id="843">843</span>
+<span id="844">844</span>
+<span id="845">845</span>
+<span id="846">846</span>
+<span id="847">847</span>
+<span id="848">848</span>
+<span id="849">849</span>
+<span id="850">850</span>
+<span id="851">851</span>
+<span id="852">852</span>
+<span id="853">853</span>
+<span id="854">854</span>
+<span id="855">855</span>
+<span id="856">856</span>
+<span id="857">857</span>
+<span id="858">858</span>
+<span id="859">859</span>
+<span id="860">860</span>
+<span id="861">861</span>
+<span id="862">862</span>
+<span id="863">863</span>
+<span id="864">864</span>
+<span id="865">865</span>
+<span id="866">866</span>
+<span id="867">867</span>
+<span id="868">868</span>
+<span id="869">869</span>
+<span id="870">870</span>
+<span id="871">871</span>
+<span id="872">872</span>
+<span id="873">873</span>
+<span id="874">874</span>
+<span id="875">875</span>
+<span id="876">876</span>
+<span id="877">877</span>
+<span id="878">878</span>
+<span id="879">879</span>
+<span id="880">880</span>
+<span id="881">881</span>
+<span id="882">882</span>
+<span id="883">883</span>
+<span id="884">884</span>
+<span id="885">885</span>
+<span id="886">886</span>
+<span id="887">887</span>
+<span id="888">888</span>
+<span id="889">889</span>
+<span id="890">890</span>
+<span id="891">891</span>
+<span id="892">892</span>
 </pre><pre class='rust '>
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>sync</span>::{<span class='ident'>Mutex</span>, <span class='ident'>MutexGuard</span>};
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>sync</span>::{<span class='ident'>Once</span>, <span class='ident'>ONCE_INIT</span>};
@@ -782,6 +976,16 @@
 
 <span class='attribute'>#[<span class='ident'>repr</span>(<span class='ident'>C</span>)]</span>
 <span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>stack_st_void</span> {
+    <span class='kw'>pub</span> <span class='ident'>stack</span>: <span class='ident'>_STACK</span>,
+}
+
+<span class='attribute'>#[<span class='ident'>repr</span>(<span class='ident'>C</span>)]</span>
+<span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>stack_st_SSL_CIPHER</span> {
+    <span class='kw'>pub</span> <span class='ident'>stack</span>: <span class='ident'>_STACK</span>,
+}
+
+<span class='attribute'>#[<span class='ident'>repr</span>(<span class='ident'>C</span>)]</span>
+<span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>stack_st_OPENSSL_STRING</span> {
     <span class='kw'>pub</span> <span class='ident'>stack</span>: <span class='ident'>_STACK</span>,
 }
 
@@ -984,8 +1188,8 @@
 <span class='attribute'>#[<span class='ident'>repr</span>(<span class='ident'>C</span>)]</span>
 <span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>X509</span> {
     <span class='kw'>pub</span> <span class='ident'>cert_info</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>X509_CINF</span>,
-    <span class='ident'>sig_alg</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_void</span>,
-    <span class='ident'>signature</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_void</span>,
+    <span class='kw'>pub</span> <span class='ident'>sig_alg</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> ::<span class='ident'>X509_ALGOR</span>,
+    <span class='kw'>pub</span> <span class='ident'>signature</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> ::<span class='ident'>ASN1_BIT_STRING</span>,
     <span class='kw'>pub</span> <span class='ident'>valid</span>: <span class='ident'>c_int</span>,
     <span class='kw'>pub</span> <span class='ident'>references</span>: <span class='ident'>c_int</span>,
     <span class='kw'>pub</span> <span class='ident'>name</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_char</span>,
@@ -1027,6 +1231,12 @@
 }
 
 <span class='attribute'>#[<span class='ident'>repr</span>(<span class='ident'>C</span>)]</span>
+<span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>X509_ALGOR</span> {
+    <span class='kw'>pub</span> <span class='ident'>algorithm</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> ::<span class='ident'>ASN1_OBJECT</span>,
+    <span class='ident'>parameter</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_void</span>,
+}
+
+<span class='attribute'>#[<span class='ident'>repr</span>(<span class='ident'>C</span>)]</span>
 <span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>ASN1_ENCODING</span> {
     <span class='kw'>pub</span> <span class='ident'>enc</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_uchar</span>,
     <span class='kw'>pub</span> <span class='ident'>len</span>: <span class='ident'>c_long</span>,
@@ -1037,6 +1247,160 @@
 <span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>X509_VAL</span> {
     <span class='kw'>pub</span> <span class='ident'>notBefore</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> ::<span class='ident'>ASN1_TIME</span>,
     <span class='kw'>pub</span> <span class='ident'>notAfter</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> ::<span class='ident'>ASN1_TIME</span>,
+}
+
+<span class='attribute'>#[<span class='ident'>repr</span>(<span class='ident'>C</span>)]</span>
+<span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>X509_REQ_INFO</span> {
+    <span class='kw'>pub</span> <span class='ident'>enc</span>: <span class='ident'>ASN1_ENCODING</span>,
+    <span class='kw'>pub</span> <span class='ident'>version</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> ::<span class='ident'>ASN1_INTEGER</span>,
+    <span class='kw'>pub</span> <span class='ident'>subject</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> ::<span class='ident'>X509_NAME</span>,
+    <span class='ident'>pubkey</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_void</span>,
+    <span class='kw'>pub</span> <span class='ident'>attributes</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>stack_st_X509_ATTRIBUTE</span>
+}
+
+<span class='attribute'>#[<span class='ident'>repr</span>(<span class='ident'>C</span>)]</span>
+<span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>X509_REQ</span> {
+    <span class='kw'>pub</span> <span class='ident'>req_info</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>X509_REQ_INFO</span>,
+    <span class='ident'>sig_alg</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_void</span>,
+    <span class='ident'>signature</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_void</span>,
+    <span class='ident'>references</span>: <span class='ident'>c_int</span>
+}
+
+<span class='attribute'>#[<span class='ident'>repr</span>(<span class='ident'>C</span>)]</span>
+<span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>SSL</span> {
+    <span class='ident'>version</span>: <span class='ident'>c_int</span>,
+    <span class='ident'>type_</span>: <span class='ident'>c_int</span>,
+    <span class='ident'>method</span>: <span class='kw-2'>*</span><span class='kw'>const</span> ::<span class='ident'>SSL_METHOD</span>,
+    <span class='ident'>rbio</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_void</span>,
+    <span class='ident'>wbio</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_void</span>,
+    <span class='ident'>bbio</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_void</span>,
+    <span class='ident'>rwstate</span>: <span class='ident'>c_int</span>,
+    <span class='ident'>in_handshake</span>: <span class='ident'>c_int</span>,
+    <span class='ident'>handshake_func</span>: <span class='prelude-ty'>Option</span><span class='op'>&lt;</span><span class='kw'>unsafe</span> <span class='kw'>extern</span> <span class='kw'>fn</span>(<span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>SSL</span>) <span class='op'>-&gt;</span> <span class='ident'>c_int</span><span class='op'>&gt;</span>,
+    <span class='kw'>pub</span> <span class='ident'>server</span>: <span class='ident'>c_int</span>,
+    <span class='ident'>new_session</span>: <span class='ident'>c_int</span>,
+    <span class='ident'>quiet_session</span>: <span class='ident'>c_int</span>,
+    <span class='ident'>shutdown</span>: <span class='ident'>c_int</span>,
+    <span class='ident'>state</span>: <span class='ident'>c_int</span>,
+    <span class='ident'>rstate</span>: <span class='ident'>c_int</span>,
+    <span class='ident'>init_buf</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_void</span>,
+    <span class='ident'>init_msg</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_void</span>,
+    <span class='ident'>init_num</span>: <span class='ident'>c_int</span>,
+    <span class='ident'>init_off</span>: <span class='ident'>c_int</span>,
+    <span class='ident'>packet</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_uchar</span>,
+    <span class='ident'>packet_length</span>: <span class='ident'>c_uint</span>,
+    <span class='ident'>s2</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_void</span>,
+    <span class='ident'>s3</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_void</span>,
+    <span class='ident'>d1</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_void</span>,
+    <span class='ident'>read_ahead</span>: <span class='ident'>c_int</span>,
+    <span class='ident'>msg_callback</span>: <span class='prelude-ty'>Option</span><span class='op'>&lt;</span><span class='kw'>unsafe</span> <span class='kw'>extern</span> <span class='kw'>fn</span>(<span class='ident'>c_int</span>, <span class='ident'>c_int</span>, <span class='ident'>c_int</span>, <span class='kw-2'>*</span><span class='kw'>const</span> <span class='ident'>c_void</span>, <span class='ident'>size_t</span>, <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>SSL</span>, <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_void</span>)<span class='op'>&gt;</span>,
+    <span class='ident'>msg_callback_arg</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_void</span>,
+    <span class='ident'>hit</span>: <span class='ident'>c_int</span>,
+    <span class='ident'>param</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_void</span>,
+    <span class='ident'>cipher_list</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>stack_st_SSL_CIPHER</span>,
+    <span class='ident'>cipher_list_by_id</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>stack_st_SSL_CIPHER</span>,
+    <span class='ident'>mac_flags</span>: <span class='ident'>c_int</span>,
+    <span class='ident'>enc_read_ctx</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> ::<span class='ident'>EVP_CIPHER_CTX</span>,
+    <span class='ident'>read_hash</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> ::<span class='ident'>EVP_MD_CTX</span>,
+    <span class='ident'>expand</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_void</span>,
+    <span class='ident'>enc_write_ctx</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> ::<span class='ident'>EVP_CIPHER_CTX</span>,
+    <span class='ident'>write_hash</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> ::<span class='ident'>EVP_MD_CTX</span>,
+    <span class='ident'>compress</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_void</span>,
+    <span class='ident'>cert</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_void</span>,
+    <span class='ident'>sid_ctx_length</span>: <span class='ident'>c_uint</span>,
+    <span class='ident'>sid_ctx</span>: [<span class='ident'>c_uchar</span>; ::<span class='ident'>SSL_MAX_SID_CTX_LENGTH</span> <span class='kw'>as</span> <span class='ident'>usize</span>],
+    <span class='ident'>session</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> ::<span class='ident'>SSL_SESSION</span>,
+    <span class='ident'>generate_session_id</span>: ::<span class='ident'>GEN_SESSION_CB</span>,
+    <span class='ident'>verify_mode</span>: <span class='ident'>c_int</span>,
+    <span class='ident'>verify_callback</span>: <span class='prelude-ty'>Option</span><span class='op'>&lt;</span><span class='kw'>unsafe</span> <span class='kw'>extern</span> <span class='kw'>fn</span>(<span class='ident'>c_int</span>, <span class='kw-2'>*</span><span class='kw-2'>mut</span> ::<span class='ident'>X509_STORE_CTX</span>) <span class='op'>-&gt;</span> <span class='ident'>c_int</span><span class='op'>&gt;</span>,
+    <span class='ident'>info_callback</span>: <span class='prelude-ty'>Option</span><span class='op'>&lt;</span><span class='kw'>unsafe</span> <span class='kw'>extern</span> <span class='kw'>fn</span>(<span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>SSL</span>, <span class='ident'>c_int</span>, <span class='ident'>c_int</span>)<span class='op'>&gt;</span>,
+    <span class='ident'>error</span>: <span class='ident'>c_int</span>,
+    <span class='ident'>error_code</span>: <span class='ident'>c_int</span>,
+    <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>not</span>(<span class='ident'>osslconf</span> <span class='op'>=</span> <span class='string'>&quot;OPENSSL_NO_KRB5&quot;</span>))]</span>
+    <span class='ident'>kssl_ctx</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_void</span>,
+    <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>not</span>(<span class='ident'>osslconf</span> <span class='op'>=</span> <span class='string'>&quot;OPENSSL_NO_PSK&quot;</span>))]</span>
+    <span class='ident'>psk_client_callback</span>: <span class='prelude-ty'>Option</span><span class='op'>&lt;</span><span class='kw'>unsafe</span> <span class='kw'>extern</span> <span class='kw'>fn</span>(<span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>SSL</span>, <span class='kw-2'>*</span><span class='kw'>const</span> <span class='ident'>c_char</span>, <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_char</span>, <span class='ident'>c_uint</span>, <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_uchar</span>, <span class='ident'>c_uint</span>) <span class='op'>-&gt;</span> <span class='ident'>c_uint</span><span class='op'>&gt;</span>,
+    <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>not</span>(<span class='ident'>osslconf</span> <span class='op'>=</span> <span class='string'>&quot;OPENSSL_NO_PSK&quot;</span>))]</span>
+    <span class='ident'>psk_server_callback</span>: <span class='prelude-ty'>Option</span><span class='op'>&lt;</span><span class='kw'>unsafe</span> <span class='kw'>extern</span> <span class='kw'>fn</span>(<span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>SSL</span>, <span class='kw-2'>*</span><span class='kw'>const</span> <span class='ident'>c_char</span>, <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_uchar</span>, <span class='ident'>c_uint</span>) <span class='op'>-&gt;</span> <span class='ident'>c_uint</span><span class='op'>&gt;</span>,
+    <span class='ident'>ctx</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> ::<span class='ident'>SSL_CTX</span>,
+    <span class='ident'>debug</span>: <span class='ident'>c_int</span>,
+    <span class='ident'>verify_result</span>: <span class='ident'>c_long</span>,
+    <span class='ident'>ex_data</span>: ::<span class='ident'>CRYPTO_EX_DATA</span>,
+    <span class='ident'>client_CA</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>stack_st_X509_NAME</span>,
+    <span class='ident'>references</span>: <span class='ident'>c_int</span>,
+    <span class='ident'>options</span>: <span class='ident'>c_ulong</span>,
+    <span class='ident'>mode</span>: <span class='ident'>c_ulong</span>,
+    <span class='ident'>max_cert_list</span>: <span class='ident'>c_long</span>,
+    <span class='ident'>first_packet</span>: <span class='ident'>c_int</span>,
+    <span class='ident'>client_version</span>: <span class='ident'>c_int</span>,
+    <span class='ident'>max_send_fragment</span>: <span class='ident'>c_uint</span>,
+    <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>not</span>(<span class='ident'>osslconf</span> <span class='op'>=</span> <span class='string'>&quot;OPENSSL_NO_TLSEXT&quot;</span>))]</span>
+    <span class='ident'>tlsext_debug_cb</span>: <span class='prelude-ty'>Option</span><span class='op'>&lt;</span><span class='kw'>unsafe</span> <span class='kw'>extern</span> <span class='kw'>fn</span>(<span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>SSL</span>, <span class='ident'>c_int</span>, <span class='ident'>c_int</span>, <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_uchar</span>, <span class='ident'>c_int</span>, <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_void</span>)<span class='op'>&gt;</span>,
+    <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>not</span>(<span class='ident'>osslconf</span> <span class='op'>=</span> <span class='string'>&quot;OPENSSL_NO_TLSEXT&quot;</span>))]</span>
+    <span class='ident'>tlsext_debug_arg</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_void</span>,
+    <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>not</span>(<span class='ident'>osslconf</span> <span class='op'>=</span> <span class='string'>&quot;OPENSSL_NO_TLSEXT&quot;</span>))]</span>
+    <span class='ident'>tlsext_hostname</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_char</span>,
+    <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>not</span>(<span class='ident'>osslconf</span> <span class='op'>=</span> <span class='string'>&quot;OPENSSL_NO_TLSEXT&quot;</span>))]</span>
+    <span class='ident'>servername_done</span>: <span class='ident'>c_int</span>,
+    <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>not</span>(<span class='ident'>osslconf</span> <span class='op'>=</span> <span class='string'>&quot;OPENSSL_NO_TLSEXT&quot;</span>))]</span>
+    <span class='ident'>tlsext_status_type</span>: <span class='ident'>c_int</span>,
+    <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>not</span>(<span class='ident'>osslconf</span> <span class='op'>=</span> <span class='string'>&quot;OPENSSL_NO_TLSEXT&quot;</span>))]</span>
+    <span class='ident'>tlsext_status_expected</span>: <span class='ident'>c_int</span>,
+    <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>not</span>(<span class='ident'>osslconf</span> <span class='op'>=</span> <span class='string'>&quot;OPENSSL_NO_TLSEXT&quot;</span>))]</span>
+    <span class='ident'>tlsext_ocsp_ids</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_void</span>,
+    <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>not</span>(<span class='ident'>osslconf</span> <span class='op'>=</span> <span class='string'>&quot;OPENSSL_NO_TLSEXT&quot;</span>))]</span>
+    <span class='ident'>tlsext_ocsp_exts</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_void</span>,
+    <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>not</span>(<span class='ident'>osslconf</span> <span class='op'>=</span> <span class='string'>&quot;OPENSSL_NO_TLSEXT&quot;</span>))]</span>
+    <span class='ident'>tlsext_ocsp_resp</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_uchar</span>,
+    <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>not</span>(<span class='ident'>osslconf</span> <span class='op'>=</span> <span class='string'>&quot;OPENSSL_NO_TLSEXT&quot;</span>))]</span>
+    <span class='ident'>tlsext_ocsp_resplen</span>: <span class='ident'>c_int</span>,
+    <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>not</span>(<span class='ident'>osslconf</span> <span class='op'>=</span> <span class='string'>&quot;OPENSSL_NO_TLSEXT&quot;</span>))]</span>
+    <span class='ident'>tlsext_ticket_expected</span>: <span class='ident'>c_int</span>,
+    <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>all</span>(<span class='ident'>not</span>(<span class='ident'>osslconf</span> <span class='op'>=</span> <span class='string'>&quot;OPENSSL_NO_TLSEXT&quot;</span>), <span class='ident'>not</span>(<span class='ident'>osslconf</span> <span class='op'>=</span> <span class='string'>&quot;OPENSSL_NO_EC&quot;</span>)))]</span>
+    <span class='ident'>tlsext_ecpointformatlist_length</span>: <span class='ident'>size_t</span>,
+    <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>all</span>(<span class='ident'>not</span>(<span class='ident'>osslconf</span> <span class='op'>=</span> <span class='string'>&quot;OPENSSL_NO_TLSEXT&quot;</span>), <span class='ident'>not</span>(<span class='ident'>osslconf</span> <span class='op'>=</span> <span class='string'>&quot;OPENSSL_NO_EC&quot;</span>)))]</span>
+    <span class='ident'>tlsext_ecpointformatlist</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_uchar</span>,
+    <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>all</span>(<span class='ident'>not</span>(<span class='ident'>osslconf</span> <span class='op'>=</span> <span class='string'>&quot;OPENSSL_NO_TLSEXT&quot;</span>), <span class='ident'>not</span>(<span class='ident'>osslconf</span> <span class='op'>=</span> <span class='string'>&quot;OPENSSL_NO_EC&quot;</span>)))]</span>
+    <span class='ident'>tlsext_ellipticcurvelist_length</span>: <span class='ident'>size_t</span>,
+    <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>all</span>(<span class='ident'>not</span>(<span class='ident'>osslconf</span> <span class='op'>=</span> <span class='string'>&quot;OPENSSL_NO_TLSEXT&quot;</span>), <span class='ident'>not</span>(<span class='ident'>osslconf</span> <span class='op'>=</span> <span class='string'>&quot;OPENSSL_NO_EC&quot;</span>)))]</span>
+    <span class='ident'>tlsext_ellipticcurvelist</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_uchar</span>,
+    <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>not</span>(<span class='ident'>osslconf</span> <span class='op'>=</span> <span class='string'>&quot;OPENSSL_NO_TLSEXT&quot;</span>))]</span>
+    <span class='ident'>tlsext_opaque_prf_input</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_void</span>,
+    <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>not</span>(<span class='ident'>osslconf</span> <span class='op'>=</span> <span class='string'>&quot;OPENSSL_NO_TLSEXT&quot;</span>))]</span>
+    <span class='ident'>tlsext_opaque_prf_input_len</span>: <span class='ident'>size_t</span>,
+    <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>not</span>(<span class='ident'>osslconf</span> <span class='op'>=</span> <span class='string'>&quot;OPENSSL_NO_TLSEXT&quot;</span>))]</span>
+    <span class='ident'>tlsext_session_ticket</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_void</span>,
+    <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>not</span>(<span class='ident'>osslconf</span> <span class='op'>=</span> <span class='string'>&quot;OPENSSL_NO_TLSEXT&quot;</span>))]</span>
+    <span class='ident'>tlsext_session_ticket_ext_cb</span>: ::<span class='ident'>tls_session_ticket_ext_cb_fn</span>,
+    <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>not</span>(<span class='ident'>osslconf</span> <span class='op'>=</span> <span class='string'>&quot;OPENSSL_NO_TLSEXT&quot;</span>))]</span>
+    <span class='ident'>tls_session_ticket_ext_cb_arg</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_void</span>,
+    <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>not</span>(<span class='ident'>osslconf</span> <span class='op'>=</span> <span class='string'>&quot;OPENSSL_NO_TLSEXT&quot;</span>))]</span>
+    <span class='ident'>tls_session_secret_cb</span>: ::<span class='ident'>tls_session_secret_cb_fn</span>,
+    <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>not</span>(<span class='ident'>osslconf</span> <span class='op'>=</span> <span class='string'>&quot;OPENSSL_NO_TLSEXT&quot;</span>))]</span>
+    <span class='ident'>tls_session_secret_cb_arg</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_void</span>,
+    <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>not</span>(<span class='ident'>osslconf</span> <span class='op'>=</span> <span class='string'>&quot;OPENSSL_NO_TLSEXT&quot;</span>))]</span>
+    <span class='ident'>initial_ctx</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> ::<span class='ident'>SSL_CTX</span>,
+    <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>all</span>(<span class='ident'>not</span>(<span class='ident'>osslconf</span> <span class='op'>=</span> <span class='string'>&quot;OPENSSL_NO_TLSEXT&quot;</span>), <span class='ident'>not</span>(<span class='ident'>osslconf</span> <span class='op'>=</span> <span class='string'>&quot;OPENSSL_NO_NEXTPROTONEG&quot;</span>)))]</span>
+    <span class='ident'>next_proto_negotiated</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_uchar</span>,
+    <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>all</span>(<span class='ident'>not</span>(<span class='ident'>osslconf</span> <span class='op'>=</span> <span class='string'>&quot;OPENSSL_NO_TLSEXT&quot;</span>), <span class='ident'>not</span>(<span class='ident'>osslconf</span> <span class='op'>=</span> <span class='string'>&quot;OPENSSL_NO_NEXTPROTONEG&quot;</span>)))]</span>
+    <span class='ident'>next_proto_negotiated_len</span>: <span class='ident'>c_uchar</span>,
+    <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>not</span>(<span class='ident'>osslconf</span> <span class='op'>=</span> <span class='string'>&quot;OPENSSL_NO_TLSEXT&quot;</span>))]</span>
+    <span class='ident'>srtp_profiles</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_void</span>,
+    <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>not</span>(<span class='ident'>osslconf</span> <span class='op'>=</span> <span class='string'>&quot;OPENSSL_NO_TLSEXT&quot;</span>))]</span>
+    <span class='ident'>srtp_profile</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_void</span>,
+    <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>not</span>(<span class='ident'>osslconf</span> <span class='op'>=</span> <span class='string'>&quot;OPENSSL_NO_TLSEXT&quot;</span>))]</span>
+    <span class='ident'>tlsext_heartbeat</span>: <span class='ident'>c_uint</span>,
+    <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>not</span>(<span class='ident'>osslconf</span> <span class='op'>=</span> <span class='string'>&quot;OPENSSL_NO_TLSEXT&quot;</span>))]</span>
+    <span class='ident'>tlsext_hb_pending</span>: <span class='ident'>c_uint</span>,
+    <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>not</span>(<span class='ident'>osslconf</span> <span class='op'>=</span> <span class='string'>&quot;OPENSSL_NO_TLSEXT&quot;</span>))]</span>
+    <span class='ident'>tlsext_hb_seq</span>: <span class='ident'>c_uint</span>,
+    <span class='ident'>renegotiate</span>: <span class='ident'>c_int</span>,
+    <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>not</span>(<span class='ident'>osslconf</span> <span class='op'>=</span> <span class='string'>&quot;OPENSSL_NO_SRP&quot;</span>))]</span>
+    <span class='ident'>srp_ctx</span>: ::<span class='ident'>SRP_CTX</span>,
+    <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>all</span>(<span class='ident'>not</span>(<span class='ident'>osslconf</span> <span class='op'>=</span> <span class='string'>&quot;OPENSSL_NO_TLSEXT&quot;</span>), <span class='ident'>ossl102</span>))]</span>
+    <span class='ident'>alpn_client_proto_list</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_uchar</span>,
+    <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>all</span>(<span class='ident'>not</span>(<span class='ident'>osslconf</span> <span class='op'>=</span> <span class='string'>&quot;OPENSSL_NO_TLSEXT&quot;</span>), <span class='ident'>ossl102</span>))]</span>
+    <span class='ident'>alpn_client_proto_list_len</span>: <span class='ident'>c_uint</span>,
 }
 
 <span class='attribute'>#[<span class='ident'>repr</span>(<span class='ident'>C</span>)]</span>
@@ -1250,6 +1614,7 @@
 
 <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>not</span>(<span class='ident'>ossl101</span>))]</span>
 <span class='kw'>pub</span> <span class='kw'>enum</span> <span class='ident'>X509_VERIFY_PARAM_ID</span> {}
+<span class='kw'>pub</span> <span class='kw'>enum</span> <span class='ident'>PKCS12</span> {}
 
 <span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>SSL_CTRL_OPTIONS</span>: <span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>32</span>;
 <span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>SSL_CTRL_CLEAR_OPTIONS</span>: <span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>77</span>;
@@ -1361,6 +1726,7 @@
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>get_rfc3526_prime_6144</span>(<span class='ident'>bn</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>BIGNUM</span>) <span class='op'>-&gt;</span> <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>BIGNUM</span>;
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>get_rfc3526_prime_8192</span>(<span class='ident'>bn</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>BIGNUM</span>) <span class='op'>-&gt;</span> <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>BIGNUM</span>;
 
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>CRYPTO_malloc</span>(<span class='ident'>num</span>: <span class='ident'>c_int</span>, <span class='ident'>file</span>: <span class='kw-2'>*</span><span class='kw'>const</span> <span class='ident'>c_char</span>, <span class='ident'>line</span>: <span class='ident'>c_int</span>) <span class='op'>-&gt;</span> <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_void</span>;
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>CRYPTO_free</span>(<span class='ident'>buf</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_void</span>);
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>CRYPTO_num_locks</span>() <span class='op'>-&gt;</span> <span class='ident'>c_int</span>;
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>CRYPTO_set_locking_callback</span>(<span class='ident'>func</span>: <span class='kw'>unsafe</span> <span class='kw'>extern</span> <span class='string'>&quot;C&quot;</span> <span class='kw'>fn</span>(<span class='ident'>mode</span>: <span class='ident'>c_int</span>,
@@ -1375,6 +1741,19 @@
                             <span class='ident'>e</span>: <span class='ident'>c_ulong</span>,
                             <span class='ident'>cb</span>: <span class='prelude-ty'>Option</span><span class='op'>&lt;</span><span class='kw'>extern</span> <span class='kw'>fn</span>(<span class='ident'>c_int</span>, <span class='ident'>c_int</span>, <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_void</span>)<span class='op'>&gt;</span>,
                             <span class='ident'>cbarg</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_void</span>) <span class='op'>-&gt;</span> <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>RSA</span>;
+
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>OCSP_cert_to_id</span>(<span class='ident'>dgst</span>: <span class='kw-2'>*</span><span class='kw'>const</span> ::<span class='ident'>EVP_MD</span>, <span class='ident'>subject</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> ::<span class='ident'>X509</span>, <span class='ident'>issuer</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> ::<span class='ident'>X509</span>) <span class='op'>-&gt;</span> <span class='kw-2'>*</span><span class='kw-2'>mut</span> ::<span class='ident'>OCSP_CERTID</span>;
+
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>PKCS12_create</span>(<span class='ident'>pass</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_char</span>,
+                         <span class='ident'>friendly_name</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_char</span>,
+                         <span class='ident'>pkey</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>EVP_PKEY</span>,
+                         <span class='ident'>cert</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>X509</span>,
+                         <span class='ident'>ca</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>stack_st_X509</span>,
+                         <span class='ident'>nid_key</span>: <span class='ident'>c_int</span>,
+                         <span class='ident'>nid_cert</span>: <span class='ident'>c_int</span>,
+                         <span class='ident'>iter</span>: <span class='ident'>c_int</span>,
+                         <span class='ident'>mac_iter</span>: <span class='ident'>c_int</span>,
+                         <span class='ident'>keytype</span>: <span class='ident'>c_int</span>) <span class='op'>-&gt;</span> <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>PKCS12</span>;
 
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>SSL_library_init</span>() <span class='op'>-&gt;</span> <span class='ident'>c_int</span>;
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>SSL_load_error_strings</span>();
@@ -1415,6 +1794,13 @@
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>X509_set_notAfter</span>(<span class='ident'>x</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> ::<span class='ident'>X509</span>, <span class='ident'>tm</span>: <span class='kw-2'>*</span><span class='kw'>const</span> ::<span class='ident'>ASN1_TIME</span>) <span class='op'>-&gt;</span> <span class='ident'>c_int</span>;
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>X509_set_notBefore</span>(<span class='ident'>x</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> ::<span class='ident'>X509</span>, <span class='ident'>tm</span>: <span class='kw-2'>*</span><span class='kw'>const</span> ::<span class='ident'>ASN1_TIME</span>) <span class='op'>-&gt;</span> <span class='ident'>c_int</span>;
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>X509_get_ext_d2i</span>(<span class='ident'>x</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> ::<span class='ident'>X509</span>, <span class='ident'>nid</span>: <span class='ident'>c_int</span>, <span class='ident'>crit</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_int</span>, <span class='ident'>idx</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_int</span>) <span class='op'>-&gt;</span> <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_void</span>;
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>X509_NAME_add_entry_by_NID</span>(<span class='ident'>x</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> ::<span class='ident'>X509_NAME</span>, <span class='ident'>field</span>: <span class='ident'>c_int</span>, <span class='ident'>ty</span>: <span class='ident'>c_int</span>, <span class='ident'>bytes</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_uchar</span>, <span class='ident'>len</span>: <span class='ident'>c_int</span>, <span class='ident'>loc</span>: <span class='ident'>c_int</span>, <span class='ident'>set</span>: <span class='ident'>c_int</span>) <span class='op'>-&gt;</span> <span class='ident'>c_int</span>;
+    <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>not</span>(<span class='ident'>ossl101</span>))]</span>
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>X509_get0_signature</span>(<span class='ident'>psig</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='kw-2'>*</span><span class='kw-2'>mut</span> ::<span class='ident'>ASN1_BIT_STRING</span>, <span class='ident'>palg</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='kw-2'>*</span><span class='kw-2'>mut</span> ::<span class='ident'>X509_ALGOR</span>, <span class='ident'>x</span>: <span class='kw-2'>*</span><span class='kw'>const</span> ::<span class='ident'>X509</span>);
+    <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>not</span>(<span class='ident'>ossl101</span>))]</span>
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>X509_get_signature_nid</span>(<span class='ident'>x</span>: <span class='kw-2'>*</span><span class='kw'>const</span> <span class='ident'>X509</span>) <span class='op'>-&gt;</span> <span class='ident'>c_int</span>;
+    <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>not</span>(<span class='ident'>ossl101</span>))]</span>
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>X509_ALGOR_get0</span>(<span class='ident'>paobj</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='kw-2'>*</span><span class='kw-2'>mut</span> ::<span class='ident'>ASN1_OBJECT</span>, <span class='ident'>pptype</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_int</span>, <span class='ident'>ppval</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_void</span>, <span class='ident'>alg</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> ::<span class='ident'>X509_ALGOR</span>);
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>X509_NAME_get_entry</span>(<span class='ident'>n</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> ::<span class='ident'>X509_NAME</span>, <span class='ident'>loc</span>: <span class='ident'>c_int</span>) <span class='op'>-&gt;</span> <span class='kw-2'>*</span><span class='kw-2'>mut</span> ::<span class='ident'>X509_NAME_ENTRY</span>;
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>X509_NAME_ENTRY_get_data</span>(<span class='ident'>ne</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> ::<span class='ident'>X509_NAME_ENTRY</span>) <span class='op'>-&gt;</span> <span class='kw-2'>*</span><span class='kw-2'>mut</span> ::<span class='ident'>ASN1_STRING</span>;
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>X509_STORE_CTX_get_chain</span>(<span class='ident'>ctx</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> ::<span class='ident'>X509_STORE_CTX</span>) <span class='op'>-&gt;</span> <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>stack_st_X509</span>;
@@ -1431,9 +1817,11 @@
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>EVP_MD_CTX_destroy</span>(<span class='ident'>ctx</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>EVP_MD_CTX</span>);
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>EVP_PKEY_bits</span>(<span class='ident'>key</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>EVP_PKEY</span>) <span class='op'>-&gt;</span> <span class='ident'>c_int</span>;
 
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>sk_new_null</span>() <span class='op'>-&gt;</span> <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>_STACK</span>;
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>sk_num</span>(<span class='ident'>st</span>: <span class='kw-2'>*</span><span class='kw'>const</span> <span class='ident'>_STACK</span>) <span class='op'>-&gt;</span> <span class='ident'>c_int</span>;
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>sk_value</span>(<span class='ident'>st</span>: <span class='kw-2'>*</span><span class='kw'>const</span> <span class='ident'>_STACK</span>, <span class='ident'>n</span>: <span class='ident'>c_int</span>) <span class='op'>-&gt;</span> <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_void</span>;
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>sk_free</span>(<span class='ident'>st</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>_STACK</span>);
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>sk_push</span>(<span class='ident'>st</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>_STACK</span>, <span class='ident'>data</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_void</span>) <span class='op'>-&gt;</span> <span class='ident'>c_int</span>;
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>sk_pop_free</span>(<span class='ident'>st</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>_STACK</span>, <span class='ident'>free</span>: <span class='prelude-ty'>Option</span><span class='op'>&lt;</span><span class='kw'>unsafe</span> <span class='kw'>extern</span> <span class='string'>&quot;C&quot;</span> <span class='kw'>fn</span> (<span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_void</span>)<span class='op'>&gt;</span>);
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>sk_pop</span>(<span class='ident'>st</span>: <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>_STACK</span>) <span class='op'>-&gt;</span> <span class='kw-2'>*</span><span class='kw-2'>mut</span> <span class='ident'>c_void</span>;
 

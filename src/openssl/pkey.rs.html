@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="rustdoc">
-    <meta name="description" content="Source to the Rust file `/Users/giovanni/.cargo/registry/src/github.com-1ecc6299db9ec823/openssl-0.9.6/src/pkey.rs`.">
+    <meta name="description" content="Source to the Rust file `/Users/giovanni/.cargo/registry/src/github.com-1ecc6299db9ec823/openssl-0.9.7/src/pkey.rs`.">
     <meta name="keywords" content="rust, rustlang, rust-lang">
 
     <title>pkey.rs.html -- source</title>
@@ -275,23 +275,58 @@
 <span id="230">230</span>
 <span id="231">231</span>
 <span id="232">232</span>
+<span id="233">233</span>
+<span id="234">234</span>
+<span id="235">235</span>
+<span id="236">236</span>
+<span id="237">237</span>
+<span id="238">238</span>
+<span id="239">239</span>
+<span id="240">240</span>
+<span id="241">241</span>
+<span id="242">242</span>
+<span id="243">243</span>
+<span id="244">244</span>
+<span id="245">245</span>
+<span id="246">246</span>
+<span id="247">247</span>
+<span id="248">248</span>
+<span id="249">249</span>
+<span id="250">250</span>
+<span id="251">251</span>
+<span id="252">252</span>
+<span id="253">253</span>
+<span id="254">254</span>
+<span id="255">255</span>
+<span id="256">256</span>
+<span id="257">257</span>
+<span id="258">258</span>
+<span id="259">259</span>
+<span id="260">260</span>
+<span id="261">261</span>
 </pre><pre class='rust '>
 <span class='kw'>use</span> <span class='ident'>libc</span>::{<span class='ident'>c_void</span>, <span class='ident'>c_char</span>, <span class='ident'>c_int</span>};
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>ptr</span>;
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>mem</span>;
 <span class='kw'>use</span> <span class='ident'>ffi</span>;
+<span class='kw'>use</span> <span class='ident'>foreign_types</span>::{<span class='ident'>Opaque</span>, <span class='ident'>ForeignType</span>, <span class='ident'>ForeignTypeRef</span>};
 
 <span class='kw'>use</span> {<span class='ident'>cvt</span>, <span class='ident'>cvt_p</span>};
 <span class='kw'>use</span> <span class='ident'>bio</span>::<span class='ident'>MemBioSlice</span>;
 <span class='kw'>use</span> <span class='ident'>dh</span>::<span class='ident'>Dh</span>;
 <span class='kw'>use</span> <span class='ident'>dsa</span>::<span class='ident'>Dsa</span>;
 <span class='kw'>use</span> <span class='ident'>ec</span>::<span class='ident'>EcKey</span>;
-<span class='kw'>use</span> <span class='ident'>rsa</span>::<span class='ident'>Rsa</span>;
+<span class='kw'>use</span> <span class='ident'>rsa</span>::{<span class='ident'>Rsa</span>, <span class='ident'>Padding</span>};
 <span class='kw'>use</span> <span class='ident'>error</span>::<span class='ident'>ErrorStack</span>;
 <span class='kw'>use</span> <span class='ident'>util</span>::{<span class='ident'>CallbackState</span>, <span class='ident'>invoke_passwd_cb_old</span>};
-<span class='kw'>use</span> <span class='ident'>types</span>::{<span class='ident'>OpenSslType</span>, <span class='ident'>OpenSslTypeRef</span>};
 
-<span class='macro'>type_</span><span class='macro'>!</span>(<span class='ident'>PKey</span>, <span class='ident'>PKeyRef</span>, <span class='ident'>ffi</span>::<span class='ident'>EVP_PKEY</span>, <span class='ident'>ffi</span>::<span class='ident'>EVP_PKEY_free</span>);
+<span class='macro'>foreign_type</span><span class='macro'>!</span> {
+    <span class='kw'>type</span> <span class='ident'>CType</span> <span class='op'>=</span> <span class='ident'>ffi</span>::<span class='ident'>EVP_PKEY</span>;
+    <span class='kw'>fn</span> <span class='ident'>drop</span> <span class='op'>=</span> <span class='ident'>ffi</span>::<span class='ident'>EVP_PKEY_free</span>;
+
+    <span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>PKey</span>;
+    <span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>PKeyRef</span>;
+}
 
 <span class='kw'>impl</span> <span class='ident'>PKeyRef</span> {
     <span class='doccomment'>/// Returns a copy of the internal RSA key.</span>
@@ -427,6 +462,29 @@
             <span class='prelude-val'>Ok</span>(<span class='ident'>PKey</span>::<span class='ident'>from_ptr</span>(<span class='ident'>evp</span>))
         }
     }
+}
+
+<span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>PKeyCtxRef</span>(<span class='ident'>Opaque</span>);
+
+<span class='kw'>impl</span> <span class='ident'>PKeyCtxRef</span> {
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>set_rsa_padding</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>, <span class='ident'>pad</span>: <span class='ident'>Padding</span>) <span class='op'>-&gt;</span> <span class='prelude-ty'>Result</span><span class='op'>&lt;</span>(), <span class='ident'>ErrorStack</span><span class='op'>&gt;</span> {
+        <span class='kw'>unsafe</span> {
+            <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>cvt</span>(<span class='ident'>ffi</span>::<span class='ident'>EVP_PKEY_CTX_set_rsa_padding</span>(<span class='self'>self</span>.<span class='ident'>as_ptr</span>(), <span class='ident'>pad</span>.<span class='ident'>as_raw</span>())));
+        }
+        <span class='prelude-val'>Ok</span>(())
+    }
+
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>rsa_padding</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='prelude-ty'>Result</span><span class='op'>&lt;</span><span class='ident'>Padding</span>, <span class='ident'>ErrorStack</span><span class='op'>&gt;</span> {
+        <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>pad</span>: <span class='ident'>c_int</span> <span class='op'>=</span> <span class='number'>0</span>;
+        <span class='kw'>unsafe</span> {
+            <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>cvt</span>(<span class='ident'>ffi</span>::<span class='ident'>EVP_PKEY_CTX_get_rsa_padding</span>(<span class='self'>self</span>.<span class='ident'>as_ptr</span>(), <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>pad</span>)));
+        };
+        <span class='prelude-val'>Ok</span>(<span class='ident'>Padding</span>::<span class='ident'>from_raw</span>(<span class='ident'>pad</span>))
+    }
+}
+
+<span class='kw'>impl</span> <span class='ident'>ForeignTypeRef</span> <span class='kw'>for</span> <span class='ident'>PKeyCtxRef</span> {
+    <span class='kw'>type</span> <span class='ident'>CType</span> <span class='op'>=</span> <span class='ident'>ffi</span>::<span class='ident'>EVP_PKEY_CTX</span>;
 }
 
 <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>test</span>)]</span>

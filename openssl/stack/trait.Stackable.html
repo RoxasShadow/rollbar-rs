@@ -48,13 +48,12 @@
                    <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                        [<span class='inner'>&#x2212;</span>]
                    </a>
-               </span><a class='srclink' href='../../src/openssl/stack.rs.html#22-28' title='goto source code'>[src]</a></span></h1>
-<pre class='rust trait'>pub trait Stackable: <a class='trait' href='../../openssl/types/trait.OpenSslType.html' title='openssl::types::OpenSslType'>OpenSslType</a> {
+               </span><a class='srclink' href='../../src/openssl/stack.rs.html#27-33' title='goto source code'>[src]</a></span></h1>
+<pre class='rust trait'>pub trait Stackable: <a class='trait' href='../../openssl/types/trait.OpenSslType.html' title='openssl::types::OpenSslType'>ForeignType</a> {
     type <a href='#associatedtype.StackType' class='type'>StackType</a>;
 }</pre><div class='docblock'><p>Trait implemented by types which can be placed in a stack.</p>
 
-<p>Like <code>OpenSslType</code>, it should not be implemented for any type outside
-of this crate.</p>
+<p>It should not be implemented for any type outside of this crate.</p>
 </div>
             <h2 id='associated-types'>Associated Types</h2>
             <div class='methods'>
@@ -65,7 +64,9 @@ of this crate.</p>
 </div></div>
         <h2 id='implementors'>Implementors</h2>
         <ul class='item-list' id='implementors-list'>
-    <li><code>impl Stackable for <a class='struct' href='../../openssl/x509/struct.X509.html' title='openssl::x509::X509'>X509</a></code></li>
+    <li><code>impl Stackable for <a class='struct' href='../../openssl/string/struct.OpensslString.html' title='openssl::string::OpensslString'>OpensslString</a></code></li>
+<li><code>impl Stackable for <a class='struct' href='../../openssl/x509/struct.X509.html' title='openssl::x509::X509'>X509</a></code></li>
+<li><code>impl Stackable for <a class='struct' href='../../openssl/x509/struct.X509Extension.html' title='openssl::x509::X509Extension'>X509Extension</a></code></li>
 <li><code>impl Stackable for <a class='struct' href='../../openssl/x509/struct.X509Name.html' title='openssl::x509::X509Name'>X509Name</a></code></li>
 <li><code>impl Stackable for <a class='struct' href='../../openssl/x509/struct.GeneralName.html' title='openssl::x509::GeneralName'>GeneralName</a></code></li>
 </ul><script type="text/javascript" async

@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="rustdoc">
-    <meta name="description" content="Source to the Rust file `/Users/giovanni/.cargo/registry/src/github.com-1ecc6299db9ec823/serde-0.9.6/src/de/mod.rs`.">
+    <meta name="description" content="Source to the Rust file `/Users/giovanni/.cargo/registry/src/github.com-1ecc6299db9ec823/serde-0.9.7/src/de/mod.rs`.">
     <meta name="keywords" content="rust, rustlang, rust-lang">
 
     <title>mod.rs.html -- source</title>
@@ -2507,7 +2507,7 @@
     <span class='doccomment'>/// benefit from taking ownership of buffered data owned by the</span>
     <span class='doccomment'>/// `Deserializer`.</span>
     <span class='doccomment'>///</span>
-    <span class='doccomment'>/// If the `Visitor would benefit from taking ownership of `Vec&lt;u8&gt;` data,</span>
+    <span class='doccomment'>/// If the `Visitor` would benefit from taking ownership of `Vec&lt;u8&gt;` data,</span>
     <span class='doccomment'>/// indicate this to the `Deserializer` by using `deserialize_byte_buf`</span>
     <span class='doccomment'>/// instead.</span>
     <span class='kw'>fn</span> <span class='ident'>deserialize_bytes</span><span class='op'>&lt;</span><span class='ident'>V</span><span class='op'>&gt;</span>(<span class='self'>self</span>, <span class='ident'>visitor</span>: <span class='ident'>V</span>) <span class='op'>-&gt;</span> <span class='prelude-ty'>Result</span><span class='op'>&lt;</span><span class='ident'>V</span>::<span class='ident'>Value</span>, <span class='self'>Self</span>::<span class='ident'>Error</span><span class='op'>&gt;</span>

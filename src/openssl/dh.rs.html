@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="rustdoc">
-    <meta name="description" content="Source to the Rust file `/Users/giovanni/.cargo/registry/src/github.com-1ecc6299db9ec823/openssl-0.9.6/src/dh.rs`.">
+    <meta name="description" content="Source to the Rust file `/Users/giovanni/.cargo/registry/src/github.com-1ecc6299db9ec823/openssl-0.9.7/src/dh.rs`.">
     <meta name="keywords" content="rust, rustlang, rust-lang">
 
     <title>dh.rs.html -- source</title>
@@ -179,17 +179,31 @@
 <span id="134">134</span>
 <span id="135">135</span>
 <span id="136">136</span>
+<span id="137">137</span>
+<span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
 </pre><pre class='rust '>
 <span class='kw'>use</span> <span class='ident'>error</span>::<span class='ident'>ErrorStack</span>;
 <span class='kw'>use</span> <span class='ident'>ffi</span>;
+<span class='kw'>use</span> <span class='ident'>foreign_types</span>::<span class='ident'>ForeignTypeRef</span>;
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>mem</span>;
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>ptr</span>;
 
 <span class='kw'>use</span> {<span class='ident'>cvt</span>, <span class='ident'>cvt_p</span>, <span class='ident'>init</span>};
 <span class='kw'>use</span> <span class='ident'>bn</span>::<span class='ident'>BigNum</span>;
-<span class='kw'>use</span> <span class='ident'>types</span>::<span class='ident'>OpenSslTypeRef</span>;
 
-<span class='macro'>type_</span><span class='macro'>!</span>(<span class='ident'>Dh</span>, <span class='ident'>DhRef</span>, <span class='ident'>ffi</span>::<span class='ident'>DH</span>, <span class='ident'>ffi</span>::<span class='ident'>DH_free</span>);
+<span class='macro'>foreign_type</span><span class='macro'>!</span> {
+    <span class='kw'>type</span> <span class='ident'>CType</span> <span class='op'>=</span> <span class='ident'>ffi</span>::<span class='ident'>DH</span>;
+    <span class='kw'>fn</span> <span class='ident'>drop</span> <span class='op'>=</span> <span class='ident'>ffi</span>::<span class='ident'>DH_free</span>;
+
+    <span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>Dh</span>;
+
+    <span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>DhRef</span>;
+}
 
 <span class='kw'>impl</span> <span class='ident'>DhRef</span> {
     <span class='macro'>to_pem</span><span class='macro'>!</span>(<span class='ident'>ffi</span>::<span class='ident'>PEM_write_bio_DHparams</span>);

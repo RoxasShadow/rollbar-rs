@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="rustdoc">
-    <meta name="description" content="Source to the Rust file `/Users/giovanni/.cargo/registry/src/github.com-1ecc6299db9ec823/openssl-0.9.6/src/dsa.rs`.">
+    <meta name="description" content="Source to the Rust file `/Users/giovanni/.cargo/registry/src/github.com-1ecc6299db9ec823/openssl-0.9.7/src/dsa.rs`.">
     <meta name="keywords" content="rust, rustlang, rust-lang">
 
     <title>dsa.rs.html -- source</title>
@@ -232,20 +232,32 @@
 <span id="187">187</span>
 <span id="188">188</span>
 <span id="189">189</span>
+<span id="190">190</span>
+<span id="191">191</span>
+<span id="192">192</span>
+<span id="193">193</span>
+<span id="194">194</span>
+<span id="195">195</span>
 </pre><pre class='rust '>
-<span class='kw'>use</span> <span class='ident'>error</span>::<span class='ident'>ErrorStack</span>;
 <span class='kw'>use</span> <span class='ident'>ffi</span>;
+<span class='kw'>use</span> <span class='ident'>foreign_types</span>::<span class='ident'>ForeignTypeRef</span>;
 <span class='kw'>use</span> <span class='ident'>libc</span>::{<span class='ident'>c_int</span>, <span class='ident'>c_char</span>, <span class='ident'>c_void</span>};
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>fmt</span>;
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>ptr</span>;
 
+<span class='kw'>use</span> {<span class='ident'>cvt</span>, <span class='ident'>cvt_p</span>};
 <span class='kw'>use</span> <span class='ident'>bio</span>::<span class='ident'>MemBioSlice</span>;
 <span class='kw'>use</span> <span class='ident'>bn</span>::<span class='ident'>BigNumRef</span>;
-<span class='kw'>use</span> {<span class='ident'>cvt</span>, <span class='ident'>cvt_p</span>};
-<span class='kw'>use</span> <span class='ident'>types</span>::<span class='ident'>OpenSslTypeRef</span>;
+<span class='kw'>use</span> <span class='ident'>error</span>::<span class='ident'>ErrorStack</span>;
 <span class='kw'>use</span> <span class='ident'>util</span>::{<span class='ident'>CallbackState</span>, <span class='ident'>invoke_passwd_cb_old</span>};
 
-<span class='macro'>type_</span><span class='macro'>!</span>(<span class='ident'>Dsa</span>, <span class='ident'>DsaRef</span>, <span class='ident'>ffi</span>::<span class='ident'>DSA</span>, <span class='ident'>ffi</span>::<span class='ident'>DSA_free</span>);
+<span class='macro'>foreign_type</span><span class='macro'>!</span> {
+    <span class='kw'>type</span> <span class='ident'>CType</span> <span class='op'>=</span> <span class='ident'>ffi</span>::<span class='ident'>DSA</span>;
+    <span class='kw'>fn</span> <span class='ident'>drop</span> <span class='op'>=</span> <span class='ident'>ffi</span>::<span class='ident'>DSA_free</span>;
+
+    <span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>Dsa</span>;
+    <span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>DsaRef</span>;
+}
 
 <span class='kw'>impl</span> <span class='ident'>DsaRef</span> {
     <span class='macro'>private_key_to_pem</span><span class='macro'>!</span>(<span class='ident'>ffi</span>::<span class='ident'>PEM_write_bio_DSAPrivateKey</span>);

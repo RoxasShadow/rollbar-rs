@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="rustdoc">
-    <meta name="description" content="Source to the Rust file `/Users/giovanni/.cargo/registry/src/github.com-1ecc6299db9ec823/openssl-0.9.6/src/rsa.rs`.">
+    <meta name="description" content="Source to the Rust file `/Users/giovanni/.cargo/registry/src/github.com-1ecc6299db9ec823/openssl-0.9.7/src/rsa.rs`.">
     <meta name="keywords" content="rust, rustlang, rust-lang">
 
     <title>rsa.rs.html -- source</title>
@@ -472,29 +472,60 @@
 <span id="427">427</span>
 <span id="428">428</span>
 <span id="429">429</span>
+<span id="430">430</span>
+<span id="431">431</span>
+<span id="432">432</span>
+<span id="433">433</span>
+<span id="434">434</span>
+<span id="435">435</span>
+<span id="436">436</span>
+<span id="437">437</span>
+<span id="438">438</span>
+<span id="439">439</span>
+<span id="440">440</span>
+<span id="441">441</span>
+<span id="442">442</span>
+<span id="443">443</span>
+<span id="444">444</span>
 </pre><pre class='rust '>
 <span class='kw'>use</span> <span class='ident'>ffi</span>;
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>fmt</span>;
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>ptr</span>;
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>mem</span>;
 <span class='kw'>use</span> <span class='ident'>libc</span>::{<span class='ident'>c_int</span>, <span class='ident'>c_void</span>, <span class='ident'>c_char</span>};
+<span class='kw'>use</span> <span class='ident'>foreign_types</span>::<span class='ident'>ForeignTypeRef</span>;
 
 <span class='kw'>use</span> {<span class='ident'>cvt</span>, <span class='ident'>cvt_p</span>, <span class='ident'>cvt_n</span>};
 <span class='kw'>use</span> <span class='ident'>bn</span>::{<span class='ident'>BigNum</span>, <span class='ident'>BigNumRef</span>};
 <span class='kw'>use</span> <span class='ident'>bio</span>::<span class='ident'>MemBioSlice</span>;
 <span class='kw'>use</span> <span class='ident'>error</span>::<span class='ident'>ErrorStack</span>;
 <span class='kw'>use</span> <span class='ident'>util</span>::{<span class='ident'>CallbackState</span>, <span class='ident'>invoke_passwd_cb_old</span>};
-<span class='kw'>use</span> <span class='ident'>types</span>::<span class='ident'>OpenSslTypeRef</span>;
 
 <span class='doccomment'>/// Type of encryption padding to use.</span>
-<span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>Copy</span>, <span class='ident'>Clone</span>)]</span>
+<span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>Debug</span>, <span class='ident'>Copy</span>, <span class='ident'>Clone</span>, <span class='ident'>PartialEq</span>, <span class='ident'>Eq</span>)]</span>
 <span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>Padding</span>(<span class='ident'>c_int</span>);
+
+<span class='kw'>impl</span> <span class='ident'>Padding</span> {
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>from_raw</span>(<span class='ident'>value</span>: <span class='ident'>c_int</span>) <span class='op'>-&gt;</span> <span class='ident'>Padding</span> {
+        <span class='ident'>Padding</span>(<span class='ident'>value</span>)
+    }
+
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>as_raw</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='ident'>c_int</span> {
+        <span class='self'>self</span>.<span class='number'>0</span>
+    }
+}
 
 <span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>NO_PADDING</span>: <span class='ident'>Padding</span> <span class='op'>=</span> <span class='ident'>Padding</span>(<span class='ident'>ffi</span>::<span class='ident'>RSA_NO_PADDING</span>);
 <span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>PKCS1_PADDING</span>: <span class='ident'>Padding</span> <span class='op'>=</span> <span class='ident'>Padding</span>(<span class='ident'>ffi</span>::<span class='ident'>RSA_PKCS1_PADDING</span>);
 <span class='kw'>pub</span> <span class='kw'>const</span> <span class='ident'>PKCS1_OAEP_PADDING</span>: <span class='ident'>Padding</span> <span class='op'>=</span> <span class='ident'>Padding</span>(<span class='ident'>ffi</span>::<span class='ident'>RSA_PKCS1_OAEP_PADDING</span>);
 
-<span class='macro'>type_</span><span class='macro'>!</span>(<span class='ident'>Rsa</span>, <span class='ident'>RsaRef</span>, <span class='ident'>ffi</span>::<span class='ident'>RSA</span>, <span class='ident'>ffi</span>::<span class='ident'>RSA_free</span>);
+<span class='macro'>foreign_type</span><span class='macro'>!</span> {
+    <span class='kw'>type</span> <span class='ident'>CType</span> <span class='op'>=</span> <span class='ident'>ffi</span>::<span class='ident'>RSA</span>;
+    <span class='kw'>fn</span> <span class='ident'>drop</span> <span class='op'>=</span> <span class='ident'>ffi</span>::<span class='ident'>RSA_free</span>;
+
+    <span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>Rsa</span>;
+    <span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>RsaRef</span>;
+}
 
 <span class='kw'>impl</span> <span class='ident'>RsaRef</span> {
     <span class='macro'>private_key_to_pem</span><span class='macro'>!</span>(<span class='ident'>ffi</span>::<span class='ident'>PEM_write_bio_RSAPrivateKey</span>);
@@ -817,7 +848,6 @@
         <span class='number'>1</span> <span class='comment'>// TODO: is this right? should it be 0? what&#39;s success?</span>
     }
 }
-
 
 <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>test</span>)]</span>
 <span class='kw'>mod</span> <span class='ident'>test</span> {

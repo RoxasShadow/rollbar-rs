@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="rustdoc">
-    <meta name="description" content="Source to the Rust file `/Users/giovanni/.cargo/registry/src/github.com-1ecc6299db9ec823/serde-0.9.6/src/de/private.rs`.">
+    <meta name="description" content="Source to the Rust file `/Users/giovanni/.cargo/registry/src/github.com-1ecc6299db9ec823/serde-0.9.7/src/de/private.rs`.">
     <meta name="keywords" content="rust, rustlang, rust-lang">
 
     <title>private.rs.html -- source</title>
@@ -90,6 +90,8 @@
 <span id="45">45</span>
 <span id="46">46</span>
 <span id="47">47</span>
+<span id="48">48</span>
+<span id="49">49</span>
 </pre><pre class='rust '>
 <span class='kw'>use</span> <span class='ident'>core</span>::<span class='ident'>marker</span>::<span class='ident'>PhantomData</span>;
 
@@ -98,6 +100,8 @@
 <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>any</span>(<span class='ident'>feature</span> <span class='op'>=</span> <span class='string'>&quot;std&quot;</span>, <span class='ident'>feature</span> <span class='op'>=</span> <span class='string'>&quot;collections&quot;</span>))]</span>
 <span class='kw'>pub</span> <span class='kw'>use</span> <span class='ident'>de</span>::<span class='ident'>content</span>::{
     <span class='ident'>Content</span>,
+    <span class='ident'>ContentRefDeserializer</span>,
+    <span class='ident'>ContentDeserializer</span>,
     <span class='ident'>TaggedContentVisitor</span>,
     <span class='ident'>InternallyTaggedUnitVisitor</span>,
     <span class='ident'>UntaggedUnitVisitor</span>,

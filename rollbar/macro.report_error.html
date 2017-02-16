@@ -53,7 +53,7 @@
 <span class='macro'>macro_rules</span><span class='macro'>!</span> <span class='ident'>report_error</span> {
     (<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>client</span>:<span class='ident'>ident</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>err</span>:<span class='ident'>ident</span>) <span class='op'>=&gt;</span> { ... };
 }</pre>
-<div class='docblock'><p>Report an error. Any type that implements <code>fmt::Debug</code> is accepted.</p>
+<div class='docblock'><p>Report an error. Any type that implements <code>error::Error</code> is accepted.</p>
 </div></section>
     <section id='search' class="content hidden"></section>
 

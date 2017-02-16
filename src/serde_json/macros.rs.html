@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="rustdoc">
-    <meta name="description" content="Source to the Rust file `/Users/giovanni/.cargo/registry/src/github.com-1ecc6299db9ec823/serde_json-0.9.5/src/macros.rs`.">
+    <meta name="description" content="Source to the Rust file `/Users/giovanni/.cargo/registry/src/github.com-1ecc6299db9ec823/serde_json-0.9.6/src/macros.rs`.">
     <meta name="keywords" content="rust, rustlang, rust-lang">
 
     <title>macros.rs.html -- source</title>
@@ -559,7 +559,7 @@
     <span class='comment'>// Any Serialize type: numbers, strings, struct literals, variables etc.</span>
     <span class='comment'>// Must be below every other rule.</span>
     (<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>other</span>:<span class='ident'>expr</span>) <span class='op'>=&gt;</span> {
-        <span class='macro-nonterminal'>$</span><span class='kw'>crate</span>::<span class='macro-nonterminal'>to_value</span>(<span class='kw-2'>&amp;</span><span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>other</span>).<span class='ident'>unwrap</span>()
+        <span class='macro-nonterminal'>$</span><span class='kw'>crate</span>::<span class='macro-nonterminal'>value</span>::<span class='ident'>ToJson</span>::<span class='ident'>to_json</span>(<span class='kw-2'>&amp;</span><span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>other</span>).<span class='ident'>unwrap</span>()
     };
 }
 </pre>
