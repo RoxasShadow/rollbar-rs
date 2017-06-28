@@ -266,7 +266,7 @@ impl<'a> ReportErrorBuilder<'a> {
     }
 
     /// Add a new frame to the collection of stack frames.
-    pub fn with_frame(&'a mut self, frame_builder: FrameBuilder) -> &'a mut Self {
+    pub fn with_frame(&mut self, frame_builder: FrameBuilder) -> &mut Self {
         self.trace.frames.push(frame_builder);
         self
     }
