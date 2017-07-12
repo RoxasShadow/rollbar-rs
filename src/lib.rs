@@ -241,7 +241,7 @@ pub struct ReportErrorBuilder<'a> {
 
 impl<'a> ReportErrorBuilder<'a> {
     /// Attach a `backtrace::Backtrace` to the `description` of the report.
-    pub fn with_backtrace(&'a mut self, backtrace: &'a Backtrace) -> &'a mut Self {
+    pub fn with_backtrace(&mut self, backtrace: &'a Backtrace) -> &mut Self {
         self.trace.frames.extend(
             backtrace.frames()
             .iter()
