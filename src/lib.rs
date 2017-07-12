@@ -10,7 +10,7 @@ extern crate backtrace;
 use std::{thread, fmt, panic, error};
 use std::borrow::ToOwned;
 use std::sync::Arc;
-use backtrace::{Backtrace, Symbol};
+use backtrace::Backtrace;
 
 /// Report an error. Any type that implements `error::Error` is accepted.
 #[macro_export]
