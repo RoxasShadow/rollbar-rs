@@ -16,12 +16,12 @@ use backtrace::Backtrace;
 #[macro_export]
 macro_rules! report_error {
     ($client:ident, $err:ident) => {{
-        let backtrace = backtrace::Backtrace::new();
+        let backtrace = ::backtrace::Backtrace::new();
         let line = line!() - 2;
 
         $client.build_report()
             .from_error(&$err)
-            .with_frame(rollbar::FrameBuilder::new()
+            .with_frame(::rollbar::FrameBuilder::new()
                         .with_line_number(line)
                         .with_file_name(file!())
                         .build())
@@ -34,12 +34,12 @@ macro_rules! report_error {
 #[macro_export]
 macro_rules! report_error_message {
     ($client:ident, $err:expr) => {{
-        let backtrace = backtrace::Backtrace::new();
+        let backtrace = ::backtrace::Backtrace::new();
         let line = line!();
 
         $client.build_report()
             .from_error_message(&$err)
-            .with_frame(rollbar::FrameBuilder::new()
+            .with_frame(::rollbar::FrameBuilder::new()
                         .with_line_number(line)
                         .with_file_name(file!())
                         .build())
@@ -52,8 +52,8 @@ macro_rules! report_error_message {
 #[macro_export]
 macro_rules! report_panics {
     ($client:ident) => {{
-        std::panic::set_hook(Box::new(move |panic_info| {
-            let backtrace = backtrace::Backtrace::new();
+        ::std::panic::set_hook(::std::boxed::Box::new(move |panic_info| {
+            let backtrace = ::backtrace::Backtrace::new();
             $client.build_report()
                 .from_panic(panic_info)
                 .with_backtrace(&backtrace)
@@ -68,7 +68,7 @@ macro_rules! report_message {
     ($client:ident, $message:expr) => {{
         $client.build_report()
             .from_message($message)
-            .with_level(rollbar::Level::INFO)
+            .with_level(::rollbar::Level::INFO)
             .send()
     }}
 }
