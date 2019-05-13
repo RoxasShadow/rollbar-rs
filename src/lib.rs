@@ -457,7 +457,7 @@ impl Client {
     /// You can get the `access_token` at
     /// <https://rollbar.com/{your_organization}/{your_app}/settings/access_tokens>.
     pub fn new<T: Into<String>>(access_token: T, environment: T) -> Client {
-        let ssl = hyper_openssl::OpensslClient::new().unwrap();
+        let ssl = hyper_openssl::HttpsConnector::new().unwrap();
         let connector = hyper::net::HttpsConnector::new(ssl);
 
         Client {

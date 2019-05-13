@@ -10,11 +10,11 @@ description = "Track and report errors, exceptions and messages from your Rust a
 keywords    = ["rollbar", "logging", "errors", "exceptions"]
 
 [dependencies]
-backtrace = "0.3"
+backtrace = "0.3.15"
 
-hyper = "0.10"
-hyper-openssl = "0.2"
+hyper = "0.12.28"
+hyper-openssl = "0.7.1"
 
-serde = "1.0"
-serde_json = "1.0"
-serde_derive = "1.0"
+serde = "1.0.*"
+serde_json = "1.0.*"
+serde_derive = "1.0.*"
