@@ -7,13 +7,15 @@ extern crate hyper;
 extern crate hyper_tls;
 extern crate backtrace;
 
+use std::env;
+use std::io::{self, Write};
 use std::{thread, fmt, panic, error};
 use std::borrow::ToOwned;
 use std::sync::Arc;
 use backtrace::Backtrace;
 use hyper_tls::HttpsConnector;
-use hyper::client::HttpConnector;
-use hyper::{Request, Method};
+//use hyper::client::HttpConnector;
+use hyper::{Request, Method, StatusCode, rt};
 use hyper::rt::Future;
 
 /// Report an error. Any type that implements `error::Error` is accepted.
@@ -136,7 +138,7 @@ const URL: &'static str = "https://api.rollbar.com/api/1/item/";
 /// Builder for a generic request to Rollbar.
 pub struct ReportBuilder<'a> {
     client: &'a Client,
-    send_strategy: Option<Box<Fn(Arc<hyper::Client>, String) -> thread::JoinHandle<Option<ResponseStatus>>>>
+    send_strategy: Option<Box<Fn(Arc<hyper::Client<hyper_tls::HttpsConnector<hyper::client::HttpConnector>>>, String) -> thread::JoinHandle<Option<ResponseStatus>>>>
 }
 
 /// Wrapper for a trace, payload of a single exception.
@@ -482,31 +484,68 @@ impl Client {
 
     /// Function used internally to send payloads to Rollbar as default `send_strategy`.
     fn send(&self, payload: String) -> thread::JoinHandle<Option<ResponseStatus>> {
-        let http_client = self.http_client.to_owned();
+        let client = self.http_client.to_owned();
         let body = hyper::Body::from(payload);
-
         let request = Request::builder()
             .method(Method::POST)
             .uri(URL)
             .body(body)
             .expect("Cannot build post request!");
 
+//            rt::run(
+//                http_client
+//                    .request(request)
+//                    .map(|response| {
+//                        println!("Received response");
+////                        // TODO: process error status code
+////                        Some(ResponseStatus::from(response.status()))
+//                    })
+//                    // If there was an error, let the user know...
+//                    .map_err(|err| {
+//                        println!("Error while sending a report to Rollbar.");
+//                        print!("The error returned by Rollbar was: {:?}.\n\n", err);
+////
+////                        None::<ResponseStatus>
+//                    })
+//                    .from_err()
+//            );
+
+
+        let fut = client
+            // Fetch the url...
+            .request(request)
+            // And then, if we get a response back...
+            .and_then(|res| {
+                println!("Response: {}", res.status());
+                println!("Headers: {:#?}", res.headers());
+
+                // The body is a stream, and for_each returns a new Future
+                // when the stream is finished, and calls the closure on
+                // each chunk of the body...
+                res.into_body().for_each(|chunk| {
+                    io::stdout().write_all(&chunk)
+                        .map_err(|e| panic!("example expects stdout is open, error={}", e))
+                })
+            })
+            // If all good, just tell the user...
+            .map(|_| {
+                println!("\n\nDone.");
+            })
+            // If there was an error, let the user know...
+            .map_err(|err| {
+                eprintln!("Error {}", err);
+            });
+
+        rt::run(fut);
+
+        println!(">>> Launching thread!");
         thread::spawn(move || {
-            let result = http_client.request(request)
-                .map(|response| {
-                    // TODO: process error status code
-                    Some(ResponseStatus::from(response.status()))
-                })
-                // If there was an error, let the user know...
-                .map_err(|err| {
-                    println!("Error while sending a report to Rollbar.");
-                    print!("The error returned by Rollbar was: {:?}.\n\n", err);
+            println!(">>> START request:");
 
-                    None::<ResponseStatus>
-                })
-                .wait();
 
-            result.unwrap()
+            println!(">>> END");
+//            result.unwrap()
+            Some(ResponseStatus::from(StatusCode::from_u16(200).unwrap()))
         })
     }
 }
@@ -764,11 +803,12 @@ mod tests {
             .with_level("info")
             .send();
 
+        println!("Status handle: {:?}", status_handle);
         match status_handle.join().unwrap() {
             Some(status) => {
                 assert_eq!(status.to_string(),
-                    "Error 401 Unauthorized: No access token was found in the request.".to_owned());
-            },
+                           "Error 401 Unauthorized: No access token was found in the request.".to_owned());
+            }
             None => { assert!(false); }
         }
     }
