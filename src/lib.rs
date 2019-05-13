@@ -4,7 +4,7 @@
 #[macro_use] extern crate serde_derive;
 extern crate serde;
 extern crate hyper;
-extern crate hyper_openssl;
+extern crate hyper_tls;
 extern crate backtrace;
 
 use std::{thread, fmt, panic, error};
@@ -132,7 +132,7 @@ const URL: &'static str = "https://api.rollbar.com/api/1/item/";
 /// Builder for a generic request to Rollbar.
 pub struct ReportBuilder<'a> {
     client: &'a Client,
-    send_strategy: Option<Box<Fn(Arc<hyper::Client>, String) -> thread::JoinHandle<Option<ResponseStatus>>>>
+    send_strategy: Option<Box<Fn(Arc<hyper::Client<hyper_openssl::HttpsConnector<hyper::HttpConnector>>>, String) -> thread::JoinHandle<Option<ResponseStatus>>>>
 }
 
 /// Wrapper for a trace, payload of a single exception.
@@ -443,7 +443,7 @@ impl<'a> ReportBuilder<'a> {
 
 /// The access point to the library.
 pub struct Client {
-    http_client: Arc<hyper::Client>,
+    http_client: Arc<hyper::Client<hyper_openssl::HttpsConnector<hyper::HttpConnector>>>,
     access_token: String,
     environment: String
 }
