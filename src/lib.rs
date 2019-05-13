@@ -1,7 +1,9 @@
 //! Track and report errors, exceptions and messages from your Rust application to Rollbar.
 
-#[macro_use] extern crate serde_json;
-#[macro_use] extern crate serde_derive;
+#[macro_use]
+extern crate serde_json;
+#[macro_use]
+extern crate serde_derive;
 extern crate serde;
 extern crate hyper;
 extern crate hyper_tls;
@@ -14,6 +16,7 @@ use backtrace::Backtrace;
 use hyper_tls::HttpsConnector;
 use hyper::client::HttpConnector;
 use hyper::{Request, Method};
+use hyper::rt::Future;
 
 /// Report an error. Any type that implements `error::Error` is accepted.
 #[macro_export]
@@ -102,17 +105,17 @@ pub enum Level {
     ERROR,
     WARNING,
     INFO,
-    DEBUG
+    DEBUG,
 }
 
 impl<'a> From<&'a str> for Level {
     fn from(s: &'a str) -> Level {
         match s {
             "critical" => Level::CRITICAL,
-            "warning"  => Level::WARNING,
-            "info"     => Level::INFO,
-            "debug"    => Level::DEBUG,
-            _          => Level::ERROR
+            "warning" => Level::WARNING,
+            "info" => Level::INFO,
+            "debug" => Level::DEBUG,
+            _ => Level::ERROR
         }
     }
 }
@@ -121,10 +124,10 @@ impl ToString for Level {
     fn to_string(&self) -> String {
         match self {
             &Level::CRITICAL => "critical".to_string(),
-            &Level::ERROR    => "error".to_string(),
-            &Level::WARNING  => "warning".to_string(),
-            &Level::INFO     => "info".to_string(),
-            &Level::DEBUG    => "debug".to_string()
+            &Level::ERROR => "error".to_string(),
+            &Level::WARNING => "warning".to_string(),
+            &Level::INFO => "info".to_string(),
+            &Level::DEBUG => "debug".to_string()
         }
     }
 }
@@ -135,14 +138,14 @@ const URL: &'static str = "https://api.rollbar.com/api/1/item/";
 /// Builder for a generic request to Rollbar.
 pub struct ReportBuilder<'a> {
     client: &'a Client,
-    send_strategy: Option<Box<Fn(Arc<hyper::Client<HttpsConnector<HttpConnector>>>, String) -> thread::JoinHandle<Option<ResponseStatus>>>>
+    send_strategy: Option<Box<Fn(Arc<hyper::Client<HttpsConnector<HttpConnector>>>, String) -> thread::JoinHandle<Option<ResponseStatus>>>>,
 }
 
 /// Wrapper for a trace, payload of a single exception.
 #[derive(Serialize, Default, Debug)]
 struct Trace {
     frames: Vec<FrameBuilder>,
-    exception: Exception
+    exception: Exception,
 }
 
 /// Wrapper for an exception, which describes the occurred error.
@@ -150,7 +153,7 @@ struct Trace {
 struct Exception {
     class: String,
     message: String,
-    description: String
+    description: String,
 }
 
 impl Default for Exception {
@@ -158,7 +161,7 @@ impl Default for Exception {
         Exception {
             class: thread::current().name().unwrap_or("unnamed").to_owned(),
             message: String::new(),
-            description: String::new()
+            description: String::new(),
         }
     }
 }
@@ -239,7 +242,7 @@ pub struct ReportErrorBuilder<'a> {
 
     /// The title shown in the dashboard for this report.
     #[serde(skip_serializing_if = "Option::is_none")]
-    title: Option<String>
+    title: Option<String>,
 }
 
 impl<'a> ReportErrorBuilder<'a> {
@@ -247,22 +250,22 @@ impl<'a> ReportErrorBuilder<'a> {
     pub fn with_backtrace(&mut self, backtrace: &'a Backtrace) -> &mut Self {
         self.trace.frames.extend(
             backtrace.frames()
-            .iter()
-            .flat_map(|frames| frames.symbols())
-            .map(|symbol|
-                // http://alexcrichton.com/backtrace-rs/backtrace/struct.Symbol.html
-                FrameBuilder {
-                    file_name: symbol.filename()
-                        .map_or_else(|| "".to_owned(), |p| format!("{}", p.display())),
-                    line_number: symbol.lineno(),
-                    function_name: symbol.name()
-                        .map(|s| format!("{}", s)),
-                    function_code_line: symbol.addr()
-                        .map(|s| format!("{:?}", s)),
-                    ..Default::default()
-                }
-            )
-            .collect::<Vec<FrameBuilder>>()
+                .iter()
+                .flat_map(|frames| frames.symbols())
+                .map(|symbol|
+                    // http://alexcrichton.com/backtrace-rs/backtrace/struct.Symbol.html
+                    FrameBuilder {
+                        file_name: symbol.filename()
+                            .map_or_else(|| "".to_owned(), |p| format!("{}", p.display())),
+                        line_number: symbol.lineno(),
+                        function_name: symbol.name()
+                            .map(|s| format!("{}", s)),
+                        function_code_line: symbol.addr()
+                            .map(|s| format!("{:?}", s)),
+                        ..Default::default()
+                    }
+                )
+                .collect::<Vec<FrameBuilder>>()
         );
 
         self
@@ -288,7 +291,7 @@ impl<'a> ReportErrorBuilder<'a> {
             Some(ref send_strategy) => {
                 let http_client = client.http_client.to_owned();
                 send_strategy(http_client, self.to_string())
-            },
+            }
             None => { client.send(self.to_string()) }
         }
     }
@@ -324,7 +327,7 @@ pub struct ReportMessageBuilder<'a> {
     message: &'a str,
 
     /// The severity level of the error. `Level::ERROR` is the default value.
-    level: Option<Level>
+    level: Option<Level>,
 }
 
 impl<'a> ReportMessageBuilder<'a> {
@@ -339,7 +342,7 @@ impl<'a> ReportMessageBuilder<'a> {
             Some(ref send_strategy) => {
                 let http_client = client.http_client.to_owned();
                 send_strategy(http_client, self.to_string())
-            },
+            }
             None => { client.send(self.to_string()) }
         }
     }
@@ -395,7 +398,7 @@ impl<'a> ReportBuilder<'a> {
             report_builder: self,
             trace: trace,
             level: None,
-            title: Some(message.to_owned())
+            title: Some(message.to_owned()),
         }
     }
 
@@ -403,13 +406,13 @@ impl<'a> ReportBuilder<'a> {
     pub fn from_error<E: error::Error>(&'a mut self, error: &'a E) -> ReportErrorBuilder<'a> {
         let mut trace = Trace::default();
         trace.exception.message = error.description().to_owned();
-        trace.exception.description = error.cause().map_or_else(|| format!("{:?}", error), |c| format!("{:?}", c));
+        trace.exception.description = error.source().map_or_else(|| format!("{:?}", error), |c| format!("{:?}", c));
 
         ReportErrorBuilder {
             report_builder: self,
             trace: trace,
             level: None,
-            title: Some(format!("{}", error))
+            title: Some(format!("{}", error)),
         }
     }
 
@@ -425,7 +428,7 @@ impl<'a> ReportBuilder<'a> {
             report_builder: self,
             trace: trace,
             level: None,
-            title: Some(message)
+            title: Some(message),
         }
     }
 
@@ -434,7 +437,7 @@ impl<'a> ReportBuilder<'a> {
         ReportMessageBuilder {
             report_builder: self,
             message: message,
-            level: None
+            level: None,
         }
     }
 
@@ -448,7 +451,7 @@ impl<'a> ReportBuilder<'a> {
 pub struct Client {
     http_client: Arc<hyper::Client<hyper_tls::HttpsConnector<hyper::client::HttpConnector>>>,
     access_token: String,
-    environment: String
+    environment: String,
 }
 
 impl Client {
@@ -460,14 +463,13 @@ impl Client {
     /// You can get the `access_token` at
     /// <https://rollbar.com/{your_organization}/{your_app}/settings/access_tokens>.
     pub fn new<T: Into<String>>(access_token: T, environment: T) -> Client {
-
         let https = HttpsConnector::new(4).expect("TLS initialization failed");
         let client = hyper::Client::builder().build::<_, hyper::Body>(https);
 
         Client {
             http_client: Arc::new(client),
             access_token: access_token.into(),
-            environment: environment.into()
+            environment: environment.into(),
         }
     }
 
@@ -475,34 +477,37 @@ impl Client {
     pub fn build_report(&self) -> ReportBuilder {
         ReportBuilder {
             client: self,
-            send_strategy: None
+            send_strategy: None,
         }
     }
 
     /// Function used internally to send payloads to Rollbar as default `send_strategy`.
     fn send(&self, payload: String) -> thread::JoinHandle<Option<ResponseStatus>> {
         let http_client = self.http_client.to_owned();
+        let body = hyper::Body::from(payload);
+
+        let request = Request::builder()
+            .method(Method::POST)
+            .uri(URL)
+            .body(body)
+            .expect("Cannot build post request!");
 
         thread::spawn(move || {
-            let req = Request::builder()
-                .method(Method::POST)
-                .uri(URL)
-                .body(hyper::Body::from(&*payload))
-                .expect("Cannot build post request!");
-
-            http_client.request(req)
-                .and_then(|hm| {
-                    Some(hm)
+            let result = http_client.request(request)
+                .map(|response| {
+                    // TODO: process error status code
+                    Some(ResponseStatus::from(response.status()))
                 })
                 // If there was an error, let the user know...
                 .map_err(|err| {
-                    print!("Your application raised an error:\n{}\n\n", payload);
-
                     println!("Error while sending a report to Rollbar.");
                     print!("The error returned by Rollbar was: {:?}.\n\n", err);
-                    None
+
+                    None::<ResponseStatus>
                 })
                 .wait();
+
+            result.unwrap()
         })
     }
 }
@@ -529,7 +534,7 @@ impl ResponseStatus {
             422 => "A syntactically valid JSON payload was found, but it had one or more semantic errors. The response will contain a `message` key describing the errors.",
             429 => "Request dropped because the rate limit has been reached for this access token, or the account is on the Free plan and the plan limit has been reached.",
             500 => "There was an error on Rollbar's end",
-            _   => "An undefined error occurred."
+            _ => "An undefined error occurred."
         }
     }
 
@@ -614,7 +619,7 @@ mod tests {
             let result = panic::catch_unwind(|| {
                 // just to trick the linter
                 let zero = "0".parse::<i32>().unwrap();
-                let _ = 1/zero;
+                let _ = 1 / zero;
             });
             assert!(result.is_err());
         }
@@ -679,17 +684,17 @@ mod tests {
         let client = Client::new("ACCESS_TOKEN", "ENVIRONMENT");
 
         match "笑".parse::<i32>() {
-            Ok(_) => { assert!(false); },
+            Ok(_) => { assert!(false); }
             Err(e) => {
                 let payload = client.build_report()
                     .from_error_message(&e)
                     .with_level(Level::WARNING)
                     .with_frame(FrameBuilder::new()
-                                .with_column_number(42)
-                                .build())
+                        .with_column_number(42)
+                        .build())
                     .with_frame(FrameBuilder::new()
-                                .with_column_number(24)
-                                .build())
+                        .with_column_number(24)
+                        .build())
                     .with_title("w")
                     .to_string();
 
@@ -763,8 +768,8 @@ mod tests {
         match status_handle.join().unwrap() {
             Some(status) => {
                 assert_eq!(status.to_string(),
-                    "Error 401 Unauthorized: No access token was found in the request.".to_owned());
-            },
+                           "Error 401 Unauthorized: No access token was found in the request.".to_owned());
+            }
             None => { assert!(false); }
         }
     }
