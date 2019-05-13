@@ -11,6 +11,8 @@ use std::{thread, fmt, panic, error};
 use std::borrow::ToOwned;
 use std::sync::Arc;
 use backtrace::Backtrace;
+use hyper_tls::HttpsConnector;
+use hyper::client::HttpConnector;
 
 /// Report an error. Any type that implements `error::Error` is accepted.
 #[macro_export]
@@ -132,7 +134,7 @@ const URL: &'static str = "https://api.rollbar.com/api/1/item/";
 /// Builder for a generic request to Rollbar.
 pub struct ReportBuilder<'a> {
     client: &'a Client,
-    send_strategy: Option<Box<Fn(Arc<hyper::Client<hyper_openssl::HttpsConnector<hyper::HttpConnector>>>, String) -> thread::JoinHandle<Option<ResponseStatus>>>>
+    send_strategy: Option<Box<Fn(Arc<hyper::Client<HttpsConnector<HttpConnector>>>, String) -> thread::JoinHandle<Option<ResponseStatus>>>>
 }
 
 /// Wrapper for a trace, payload of a single exception.
@@ -437,13 +439,13 @@ impl<'a> ReportBuilder<'a> {
 
     /// Use given function to send a request to Rollbar instead of the built-in one.
     add_field!(with_send_strategy, send_strategy,
-              Box<Fn(Arc<hyper::Client>, String) ->
+              Box<Fn(Arc<hyper::Client<hyper_tls::HttpsConnector<hyper::client::HttpConnector>>>, String) ->
                 thread::JoinHandle<Option<ResponseStatus>>>);
 }
 
 /// The access point to the library.
 pub struct Client {
-    http_client: Arc<hyper::Client<hyper_openssl::HttpsConnector<hyper::HttpConnector>>>,
+    http_client: Arc<hyper::Client<hyper_tls::HttpsConnector<hyper::client::HttpConnector>>>,
     access_token: String,
     environment: String
 }
@@ -457,11 +459,12 @@ impl Client {
     /// You can get the `access_token` at
     /// <https://rollbar.com/{your_organization}/{your_app}/settings/access_tokens>.
     pub fn new<T: Into<String>>(access_token: T, environment: T) -> Client {
-        let ssl = hyper_openssl::HttpsConnector::new().unwrap();
-        let connector = hyper::net::HttpsConnector::new(ssl);
+
+        let https = HttpsConnector::new(4).expect("TLS initialization failed");
+        let client = hyper::Client::builder().build::<_, hyper::Body>(https);
 
         Client {
-            http_client: Arc::new(hyper::Client::with_connector(connector)),
+            http_client: Arc::new(client),
             access_token: access_token.into(),
             environment: environment.into()
         }
@@ -484,9 +487,9 @@ impl Client {
 
             match res {
                 Ok(res) => {
-                    let status: ResponseStatus = res.status.into();
+                    let status = res.status.into();
 
-                    if status.0 != hyper::status::StatusCode::Ok {
+                    if status != Ok {
                         print!("Your application raised an error:\n{}\n\n", payload);
 
                         println!("Error while sending a report to Rollbar.");
