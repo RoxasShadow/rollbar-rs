@@ -13,6 +13,7 @@ use std::sync::Arc;
 use backtrace::Backtrace;
 use hyper_tls::HttpsConnector;
 use hyper::client::HttpConnector;
+use hyper::{Request, Method};
 
 /// Report an error. Any type that implements `error::Error` is accepted.
 #[macro_export]
@@ -483,40 +484,35 @@ impl Client {
         let http_client = self.http_client.to_owned();
 
         thread::spawn(move || {
-            let res = http_client.post(URL).body(&*payload).send();
+            let req = Request::builder()
+                .method(Method::POST)
+                .uri(URL)
+                .body(hyper::Body::from(&*payload))
+                .expect("Cannot build post request!");
 
-            match res {
-                Ok(res) => {
-                    let status = res.status.into();
-
-                    if status != Ok {
-                        print!("Your application raised an error:\n{}\n\n", payload);
-
-                        println!("Error while sending a report to Rollbar.");
-                        print!("The error returned by Rollbar was: {}.\n\n", status.to_string());
-                    }
-
-                    Some(status)
-                },
-                Err(err) => {
+            http_client.request(req)
+                .and_then(|hm| {
+                    Some(hm)
+                })
+                // If there was an error, let the user know...
+                .map_err(|err| {
                     print!("Your application raised an error:\n{}\n\n", payload);
 
                     println!("Error while sending a report to Rollbar.");
                     print!("The error returned by Rollbar was: {:?}.\n\n", err);
-
                     None
-                }
-            }
+                })
+                .wait();
         })
     }
 }
 
-/// Wrapper for `hyper::status::StatusCode`.
+/// Wrapper for `hyper::StatusCode`.
 #[derive(Debug)]
-pub struct ResponseStatus(hyper::status::StatusCode);
+pub struct ResponseStatus(hyper::StatusCode);
 
-impl From<hyper::status::StatusCode> for ResponseStatus {
-    fn from(status_code: hyper::status::StatusCode) -> ResponseStatus {
+impl From<hyper::StatusCode> for ResponseStatus {
+    fn from(status_code: hyper::StatusCode) -> ResponseStatus {
         ResponseStatus(status_code)
     }
 }
@@ -524,7 +520,7 @@ impl From<hyper::status::StatusCode> for ResponseStatus {
 impl ResponseStatus {
     /// Return a description provided by Rollbar for the status code returned by each request.
     pub fn description(&self) -> &str {
-        match self.0.to_u16() {
+        match self.0.as_u16() {
             200 => "The item was accepted for processing.",
             400 => "No JSON payload was found, or it could not be decoded.",
             401 => "No access token was found in the request.",
