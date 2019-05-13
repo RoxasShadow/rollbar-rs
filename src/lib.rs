@@ -1,9 +1,7 @@
 //! Track and report errors, exceptions and messages from your Rust application to Rollbar.
 
-#[macro_use]
-extern crate serde_json;
-#[macro_use]
-extern crate serde_derive;
+#[macro_use] extern crate serde_json;
+#[macro_use] extern crate serde_derive;
 extern crate serde;
 extern crate hyper;
 extern crate hyper_tls;
@@ -105,17 +103,17 @@ pub enum Level {
     ERROR,
     WARNING,
     INFO,
-    DEBUG,
+    DEBUG
 }
 
 impl<'a> From<&'a str> for Level {
     fn from(s: &'a str) -> Level {
         match s {
             "critical" => Level::CRITICAL,
-            "warning" => Level::WARNING,
-            "info" => Level::INFO,
-            "debug" => Level::DEBUG,
-            _ => Level::ERROR
+            "warning"  => Level::WARNING,
+            "info"     => Level::INFO,
+            "debug"    => Level::DEBUG,
+            _          => Level::ERROR
         }
     }
 }
@@ -124,10 +122,10 @@ impl ToString for Level {
     fn to_string(&self) -> String {
         match self {
             &Level::CRITICAL => "critical".to_string(),
-            &Level::ERROR => "error".to_string(),
-            &Level::WARNING => "warning".to_string(),
-            &Level::INFO => "info".to_string(),
-            &Level::DEBUG => "debug".to_string()
+            &Level::ERROR    => "error".to_string(),
+            &Level::WARNING  => "warning".to_string(),
+            &Level::INFO     => "info".to_string(),
+            &Level::DEBUG    => "debug".to_string()
         }
     }
 }
@@ -138,14 +136,14 @@ const URL: &'static str = "https://api.rollbar.com/api/1/item/";
 /// Builder for a generic request to Rollbar.
 pub struct ReportBuilder<'a> {
     client: &'a Client,
-    send_strategy: Option<Box<Fn(Arc<hyper::Client<HttpsConnector<HttpConnector>>>, String) -> thread::JoinHandle<Option<ResponseStatus>>>>,
+    send_strategy: Option<Box<Fn(Arc<hyper::Client>, String) -> thread::JoinHandle<Option<ResponseStatus>>>>
 }
 
 /// Wrapper for a trace, payload of a single exception.
 #[derive(Serialize, Default, Debug)]
 struct Trace {
     frames: Vec<FrameBuilder>,
-    exception: Exception,
+    exception: Exception
 }
 
 /// Wrapper for an exception, which describes the occurred error.
@@ -153,7 +151,7 @@ struct Trace {
 struct Exception {
     class: String,
     message: String,
-    description: String,
+    description: String
 }
 
 impl Default for Exception {
@@ -161,7 +159,7 @@ impl Default for Exception {
         Exception {
             class: thread::current().name().unwrap_or("unnamed").to_owned(),
             message: String::new(),
-            description: String::new(),
+            description: String::new()
         }
     }
 }
@@ -242,7 +240,7 @@ pub struct ReportErrorBuilder<'a> {
 
     /// The title shown in the dashboard for this report.
     #[serde(skip_serializing_if = "Option::is_none")]
-    title: Option<String>,
+    title: Option<String>
 }
 
 impl<'a> ReportErrorBuilder<'a> {
@@ -291,7 +289,7 @@ impl<'a> ReportErrorBuilder<'a> {
             Some(ref send_strategy) => {
                 let http_client = client.http_client.to_owned();
                 send_strategy(http_client, self.to_string())
-            }
+            },
             None => { client.send(self.to_string()) }
         }
     }
@@ -327,7 +325,7 @@ pub struct ReportMessageBuilder<'a> {
     message: &'a str,
 
     /// The severity level of the error. `Level::ERROR` is the default value.
-    level: Option<Level>,
+    level: Option<Level>
 }
 
 impl<'a> ReportMessageBuilder<'a> {
@@ -342,7 +340,7 @@ impl<'a> ReportMessageBuilder<'a> {
             Some(ref send_strategy) => {
                 let http_client = client.http_client.to_owned();
                 send_strategy(http_client, self.to_string())
-            }
+            },
             None => { client.send(self.to_string()) }
         }
     }
@@ -398,10 +396,11 @@ impl<'a> ReportBuilder<'a> {
             report_builder: self,
             trace: trace,
             level: None,
-            title: Some(message.to_owned()),
+            title: Some(message.to_owned())
         }
     }
 
+    // TODO: remove self?
     /// To be used when an `error::Error` must be reported.
     pub fn from_error<E: error::Error>(&'a mut self, error: &'a E) -> ReportErrorBuilder<'a> {
         let mut trace = Trace::default();
@@ -412,7 +411,7 @@ impl<'a> ReportBuilder<'a> {
             report_builder: self,
             trace: trace,
             level: None,
-            title: Some(format!("{}", error)),
+            title: Some(format!("{}", error))
         }
     }
 
@@ -428,7 +427,7 @@ impl<'a> ReportBuilder<'a> {
             report_builder: self,
             trace: trace,
             level: None,
-            title: Some(message),
+            title: Some(message)
         }
     }
 
@@ -437,7 +436,7 @@ impl<'a> ReportBuilder<'a> {
         ReportMessageBuilder {
             report_builder: self,
             message: message,
-            level: None,
+            level: None
         }
     }
 
@@ -451,7 +450,7 @@ impl<'a> ReportBuilder<'a> {
 pub struct Client {
     http_client: Arc<hyper::Client<hyper_tls::HttpsConnector<hyper::client::HttpConnector>>>,
     access_token: String,
-    environment: String,
+    environment: String
 }
 
 impl Client {
@@ -469,7 +468,7 @@ impl Client {
         Client {
             http_client: Arc::new(client),
             access_token: access_token.into(),
-            environment: environment.into(),
+            environment: environment.into()
         }
     }
 
@@ -477,7 +476,7 @@ impl Client {
     pub fn build_report(&self) -> ReportBuilder {
         ReportBuilder {
             client: self,
-            send_strategy: None,
+            send_strategy: None
         }
     }
 
@@ -534,7 +533,7 @@ impl ResponseStatus {
             422 => "A syntactically valid JSON payload was found, but it had one or more semantic errors. The response will contain a `message` key describing the errors.",
             429 => "Request dropped because the rate limit has been reached for this access token, or the account is on the Free plan and the plan limit has been reached.",
             500 => "There was an error on Rollbar's end",
-            _ => "An undefined error occurred."
+            _   => "An undefined error occurred."
         }
     }
 
@@ -619,7 +618,7 @@ mod tests {
             let result = panic::catch_unwind(|| {
                 // just to trick the linter
                 let zero = "0".parse::<i32>().unwrap();
-                let _ = 1 / zero;
+                let _ = 1/zero;
             });
             assert!(result.is_err());
         }
@@ -684,17 +683,17 @@ mod tests {
         let client = Client::new("ACCESS_TOKEN", "ENVIRONMENT");
 
         match "笑".parse::<i32>() {
-            Ok(_) => { assert!(false); }
+            Ok(_) => { assert!(false); },
             Err(e) => {
                 let payload = client.build_report()
                     .from_error_message(&e)
                     .with_level(Level::WARNING)
                     .with_frame(FrameBuilder::new()
-                        .with_column_number(42)
-                        .build())
+                                .with_column_number(42)
+                                .build())
                     .with_frame(FrameBuilder::new()
-                        .with_column_number(24)
-                        .build())
+                                .with_column_number(24)
+                                .build())
                     .with_title("w")
                     .to_string();
 
@@ -768,8 +767,8 @@ mod tests {
         match status_handle.join().unwrap() {
             Some(status) => {
                 assert_eq!(status.to_string(),
-                           "Error 401 Unauthorized: No access token was found in the request.".to_owned());
-            }
+                    "Error 401 Unauthorized: No access token was found in the request.".to_owned());
+            },
             None => { assert!(false); }
         }
     }
