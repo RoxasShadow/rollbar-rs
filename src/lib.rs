@@ -767,11 +767,10 @@ mod tests {
             .with_level("info")
             .send();
 
-        println!("Status handle: {:?}", status_handle);
         match status_handle.join().unwrap() {
             Some(status) => {
                 assert_eq!(status.to_string(),
-                           "Error 401 Unauthorized: No access token was found in the request.".to_owned());
+                    "Error 401 Unauthorized: No access token was found in the request.".to_owned());
             }
             None => { assert!(false); }
         }
