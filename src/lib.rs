@@ -1,22 +1,25 @@
 //! Track and report errors, exceptions and messages from your Rust application to Rollbar.
 
-#[macro_use] extern crate serde_json;
-#[macro_use] extern crate serde_derive;
-extern crate serde;
+extern crate backtrace;
+extern crate futures;
 extern crate hyper;
 extern crate hyper_tls;
-extern crate backtrace;
+extern crate serde;
+#[macro_use] extern crate serde_derive;
+#[macro_use] extern crate serde_json;
+extern crate tokio;
 
-use std::env;
-use std::io::{self, Write};
-use std::{thread, fmt, panic, error};
+//use std::io::{self, Write};
+use std::{error, fmt, panic, thread};
 use std::borrow::ToOwned;
 use std::sync::Arc;
+
 use backtrace::Backtrace;
-use hyper_tls::HttpsConnector;
 //use hyper::client::HttpConnector;
-use hyper::{Request, Method, StatusCode, rt};
+use hyper::{Method, Request};
 use hyper::rt::Future;
+use hyper_tls::HttpsConnector;
+use tokio::runtime::current_thread;
 
 /// Report an error. Any type that implements `error::Error` is accepted.
 #[macro_export]
@@ -484,7 +487,6 @@ impl Client {
 
     /// Function used internally to send payloads to Rollbar as default `send_strategy`.
     fn send(&self, payload: String) -> thread::JoinHandle<Option<ResponseStatus>> {
-        let client = self.http_client.to_owned();
         let body = hyper::Body::from(payload);
         let request = Request::builder()
             .method(Method::POST)
@@ -492,60 +494,20 @@ impl Client {
             .body(body)
             .expect("Cannot build post request!");
 
-//            rt::run(
-//                http_client
-//                    .request(request)
-//                    .map(|response| {
-//                        println!("Received response");
-////                        // TODO: process error status code
-////                        Some(ResponseStatus::from(response.status()))
-//                    })
-//                    // If there was an error, let the user know...
-//                    .map_err(|err| {
-//                        println!("Error while sending a report to Rollbar.");
-//                        print!("The error returned by Rollbar was: {:?}.\n\n", err);
-////
-////                        None::<ResponseStatus>
-//                    })
-//                    .from_err()
-//            );
-
-
-        let fut = client
-            // Fetch the url...
+        let job = self.http_client
             .request(request)
-            // And then, if we get a response back...
-            .and_then(|res| {
-                println!("Response: {}", res.status());
-                println!("Headers: {:#?}", res.headers());
+            .map(|res| {
+                Some(ResponseStatus::from(res.status()))
+            })
+            .map_err( |error| {
+                println!("Error while sending a report to Rollbar.");
+                print!("The error returned by Rollbar was: {:?}.\n\n", error);
 
-                // The body is a stream, and for_each returns a new Future
-                // when the stream is finished, and calls the closure on
-                // each chunk of the body...
-                res.into_body().for_each(|chunk| {
-                    io::stdout().write_all(&chunk)
-                        .map_err(|e| panic!("example expects stdout is open, error={}", e))
-                })
-            })
-            // If all good, just tell the user...
-            .map(|_| {
-                println!("\n\nDone.");
-            })
-            // If there was an error, let the user know...
-            .map_err(|err| {
-                eprintln!("Error {}", err);
+                None::<ResponseStatus>
             });
 
-        rt::run(fut);
-
-        println!(">>> Launching thread!");
         thread::spawn(move || {
-            println!(">>> START request:");
-
-
-            println!(">>> END");
-//            result.unwrap()
-            Some(ResponseStatus::from(StatusCode::from_u16(200).unwrap()))
+            current_thread::Runtime::new().unwrap().block_on(job).unwrap()
         })
     }
 }
@@ -595,11 +557,13 @@ mod tests {
     extern crate backtrace;
 
     use std::panic;
-    use super::{Client, Level, FrameBuilder};
     use std::sync::{Arc, Mutex};
     use std::sync::mpsc::channel;
+
     use backtrace::Backtrace;
     use serde_json::Value;
+
+    use super::{Client, FrameBuilder, Level};
 
     macro_rules! normalize_frames {
         ($payload:expr, $expected_payload:expr, $expected_frames:expr) => {
