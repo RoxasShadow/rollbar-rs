@@ -1,16 +1,25 @@
 //! Track and report errors, exceptions and messages from your Rust application to Rollbar.
 
-#[macro_use] extern crate serde_json;
-#[macro_use] extern crate serde_derive;
-extern crate serde;
-extern crate hyper;
-extern crate hyper_openssl;
 extern crate backtrace;
+extern crate futures;
+extern crate hyper;
+extern crate hyper_tls;
+extern crate serde;
+#[macro_use] extern crate serde_derive;
+#[macro_use] extern crate serde_json;
+extern crate tokio;
 
-use std::{thread, fmt, panic, error};
+//use std::io::{self, Write};
+use std::{error, fmt, panic, thread};
 use std::borrow::ToOwned;
 use std::sync::Arc;
+
 use backtrace::Backtrace;
+//use hyper::client::HttpConnector;
+use hyper::{Method, Request};
+use hyper::rt::Future;
+use hyper_tls::HttpsConnector;
+use tokio::runtime::current_thread;
 
 /// Report an error. Any type that implements `error::Error` is accepted.
 #[macro_export]
@@ -132,7 +141,7 @@ const URL: &'static str = "https://api.rollbar.com/api/1/item/";
 /// Builder for a generic request to Rollbar.
 pub struct ReportBuilder<'a> {
     client: &'a Client,
-    send_strategy: Option<Box<Fn(Arc<hyper::Client>, String) -> thread::JoinHandle<Option<ResponseStatus>>>>
+    send_strategy: Option<Box<Fn(Arc<hyper::Client<hyper_tls::HttpsConnector<hyper::client::HttpConnector>>>, String) -> thread::JoinHandle<Option<ResponseStatus>>>>
 }
 
 /// Wrapper for a trace, payload of a single exception.
@@ -244,22 +253,22 @@ impl<'a> ReportErrorBuilder<'a> {
     pub fn with_backtrace(&mut self, backtrace: &'a Backtrace) -> &mut Self {
         self.trace.frames.extend(
             backtrace.frames()
-            .iter()
-            .flat_map(|frames| frames.symbols())
-            .map(|symbol|
-                // http://alexcrichton.com/backtrace-rs/backtrace/struct.Symbol.html
-                FrameBuilder {
-                    file_name: symbol.filename()
-                        .map_or_else(|| "".to_owned(), |p| format!("{}", p.display())),
-                    line_number: symbol.lineno(),
-                    function_name: symbol.name()
-                        .map(|s| format!("{}", s)),
-                    function_code_line: symbol.addr()
-                        .map(|s| format!("{:?}", s)),
-                    ..Default::default()
-                }
-            )
-            .collect::<Vec<FrameBuilder>>()
+                .iter()
+                .flat_map(|frames| frames.symbols())
+                .map(|symbol|
+                    // http://alexcrichton.com/backtrace-rs/backtrace/struct.Symbol.html
+                    FrameBuilder {
+                        file_name: symbol.filename()
+                            .map_or_else(|| "".to_owned(), |p| format!("{}", p.display())),
+                        line_number: symbol.lineno(),
+                        function_name: symbol.name()
+                            .map(|s| format!("{}", s)),
+                        function_code_line: symbol.addr()
+                            .map(|s| format!("{:?}", s)),
+                        ..Default::default()
+                    }
+                )
+                .collect::<Vec<FrameBuilder>>()
         );
 
         self
@@ -396,11 +405,12 @@ impl<'a> ReportBuilder<'a> {
         }
     }
 
+    // TODO: remove self?
     /// To be used when an `error::Error` must be reported.
     pub fn from_error<E: error::Error>(&'a mut self, error: &'a E) -> ReportErrorBuilder<'a> {
         let mut trace = Trace::default();
         trace.exception.message = error.description().to_owned();
-        trace.exception.description = error.cause().map_or_else(|| format!("{:?}", error), |c| format!("{:?}", c));
+        trace.exception.description = error.source().map_or_else(|| format!("{:?}", error), |c| format!("{:?}", c));
 
         ReportErrorBuilder {
             report_builder: self,
@@ -437,13 +447,13 @@ impl<'a> ReportBuilder<'a> {
 
     /// Use given function to send a request to Rollbar instead of the built-in one.
     add_field!(with_send_strategy, send_strategy,
-              Box<Fn(Arc<hyper::Client>, String) ->
+              Box<Fn(Arc<hyper::Client<hyper_tls::HttpsConnector<hyper::client::HttpConnector>>>, String) ->
                 thread::JoinHandle<Option<ResponseStatus>>>);
 }
 
 /// The access point to the library.
 pub struct Client {
-    http_client: Arc<hyper::Client>,
+    http_client: Arc<hyper::Client<hyper_tls::HttpsConnector<hyper::client::HttpConnector>>>,
     access_token: String,
     environment: String
 }
@@ -457,11 +467,11 @@ impl Client {
     /// You can get the `access_token` at
     /// <https://rollbar.com/{your_organization}/{your_app}/settings/access_tokens>.
     pub fn new<T: Into<String>>(access_token: T, environment: T) -> Client {
-        let ssl = hyper_openssl::OpensslClient::new().unwrap();
-        let connector = hyper::net::HttpsConnector::new(ssl);
+        let https = HttpsConnector::new(4).expect("TLS initialization failed");
+        let client = hyper::Client::builder().build::<_, hyper::Body>(https);
 
         Client {
-            http_client: Arc::new(hyper::Client::with_connector(connector)),
+            http_client: Arc::new(client),
             access_token: access_token.into(),
             environment: environment.into()
         }
@@ -477,43 +487,37 @@ impl Client {
 
     /// Function used internally to send payloads to Rollbar as default `send_strategy`.
     fn send(&self, payload: String) -> thread::JoinHandle<Option<ResponseStatus>> {
-        let http_client = self.http_client.to_owned();
+        let body = hyper::Body::from(payload);
+        let request = Request::builder()
+            .method(Method::POST)
+            .uri(URL)
+            .body(body)
+            .expect("Cannot build post request!");
+
+        let job = self.http_client
+            .request(request)
+            .map(|res| {
+                Some(ResponseStatus::from(res.status()))
+            })
+            .map_err( |error| {
+                println!("Error while sending a report to Rollbar.");
+                print!("The error returned by Rollbar was: {:?}.\n\n", error);
+
+                None::<ResponseStatus>
+            });
 
         thread::spawn(move || {
-            let res = http_client.post(URL).body(&*payload).send();
-
-            match res {
-                Ok(res) => {
-                    let status: ResponseStatus = res.status.into();
-
-                    if status.0 != hyper::status::StatusCode::Ok {
-                        print!("Your application raised an error:\n{}\n\n", payload);
-
-                        println!("Error while sending a report to Rollbar.");
-                        print!("The error returned by Rollbar was: {}.\n\n", status.to_string());
-                    }
-
-                    Some(status)
-                },
-                Err(err) => {
-                    print!("Your application raised an error:\n{}\n\n", payload);
-
-                    println!("Error while sending a report to Rollbar.");
-                    print!("The error returned by Rollbar was: {:?}.\n\n", err);
-
-                    None
-                }
-            }
+            current_thread::Runtime::new().unwrap().block_on(job).unwrap()
         })
     }
 }
 
-/// Wrapper for `hyper::status::StatusCode`.
+/// Wrapper for `hyper::StatusCode`.
 #[derive(Debug)]
-pub struct ResponseStatus(hyper::status::StatusCode);
+pub struct ResponseStatus(hyper::StatusCode);
 
-impl From<hyper::status::StatusCode> for ResponseStatus {
-    fn from(status_code: hyper::status::StatusCode) -> ResponseStatus {
+impl From<hyper::StatusCode> for ResponseStatus {
+    fn from(status_code: hyper::StatusCode) -> ResponseStatus {
         ResponseStatus(status_code)
     }
 }
@@ -521,7 +525,7 @@ impl From<hyper::status::StatusCode> for ResponseStatus {
 impl ResponseStatus {
     /// Return a description provided by Rollbar for the status code returned by each request.
     pub fn description(&self) -> &str {
-        match self.0.to_u16() {
+        match self.0.as_u16() {
             200 => "The item was accepted for processing.",
             400 => "No JSON payload was found, or it could not be decoded.",
             401 => "No access token was found in the request.",
@@ -553,11 +557,13 @@ mod tests {
     extern crate backtrace;
 
     use std::panic;
-    use super::{Client, Level, FrameBuilder};
     use std::sync::{Arc, Mutex};
     use std::sync::mpsc::channel;
+
     use backtrace::Backtrace;
     use serde_json::Value;
+
+    use super::{Client, FrameBuilder, Level};
 
     macro_rules! normalize_frames {
         ($payload:expr, $expected_payload:expr, $expected_frames:expr) => {
@@ -765,7 +771,7 @@ mod tests {
             Some(status) => {
                 assert_eq!(status.to_string(),
                     "Error 401 Unauthorized: No access token was found in the request.".to_owned());
-            },
+            }
             None => { assert!(false); }
         }
     }

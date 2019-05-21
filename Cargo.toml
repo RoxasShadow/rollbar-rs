@@ -12,8 +12,11 @@ keywords    = ["rollbar", "logging", "errors", "exceptions"]
 [dependencies]
 backtrace = "0.3"
 
-hyper = "0.10"
-hyper-openssl = "0.2"
+hyper = "0.12"
+hyper-tls = "0.3"
+
+tokio="*"
+futures="*"
 
 serde = "1.0"
 serde_json = "1.0"
