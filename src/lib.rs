@@ -1,6 +1,6 @@
 //! Track and report errors, exceptions and messages from your Rust application to Rollbar.
 
-extern crate backtrace;
+pub extern crate backtrace;
 extern crate futures;
 extern crate hyper;
 extern crate hyper_tls;
@@ -27,7 +27,7 @@ use tokio::runtime::current_thread;
 #[macro_export]
 macro_rules! report_error {
     ($client:ident, $err:ident) => {{
-        let backtrace = ::backtrace::Backtrace::new();
+        let backtrace = $crate::backtrace::Backtrace::new();
         let line = line!() - 2;
 
         $client
@@ -48,7 +48,7 @@ macro_rules! report_error {
 #[macro_export]
 macro_rules! report_error_message {
     ($client:ident, $err:expr) => {{
-        let backtrace = ::backtrace::Backtrace::new();
+        let backtrace = $crate::backtrace::Backtrace::new();
         let line = line!();
 
         $client
@@ -70,7 +70,7 @@ macro_rules! report_error_message {
 macro_rules! report_panics {
     ($client:ident) => {{
         ::std::panic::set_hook(::std::boxed::Box::new(move |panic_info| {
-            let backtrace = ::backtrace::Backtrace::new();
+            let backtrace = $crate::backtrace::Backtrace::new();
             $client
                 .build_report()
                 .from_panic(panic_info)
@@ -153,7 +153,7 @@ pub struct ReportBuilder<'a> {
     client: &'a Client,
     send_strategy: Option<
         Box<
-            Fn(
+            dyn Fn(
                 Arc<hyper::Client<hyper_tls::HttpsConnector<hyper::client::HttpConnector>>>,
                 String,
             ) -> thread::JoinHandle<Option<ResponseStatus>>,
@@ -474,7 +474,7 @@ impl<'a> ReportBuilder<'a> {
         with_send_strategy,
         send_strategy,
         Box<
-            Fn(
+            dyn Fn(
                 Arc<hyper::Client<hyper_tls::HttpsConnector<hyper::client::HttpConnector>>>,
                 String,
             ) -> thread::JoinHandle<Option<ResponseStatus>>,
