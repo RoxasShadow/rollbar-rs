@@ -441,6 +441,7 @@ impl<'a> ReportBuilder<'a> {
         let message = format!("{}", error_message);
 
         let mut trace = Trace::default();
+        trace.exception.class = std::any::type_name::<T>().to_owned();
         trace.exception.message = message.to_owned();
         trace.exception.description = message.to_owned();
 
@@ -696,7 +697,7 @@ mod tests {
                             "lineno": 268
                         }],
                         "exception": {
-                            "class": "tests::test_report_panics",
+                            "class": "<panic>",
                             "message": "attempt to divide by zero",
                             "description": "attempt to divide by zero"
                         }
@@ -775,7 +776,7 @@ mod tests {
                                     "colno": 24
                                 }],
                                 "exception": {
-                                    "class": "tests::test_report_error",
+                                    "class": "core::num::ParseIntError",
                                     "message": "invalid digit found in string",
                                     "description": "invalid digit found in string"
                                 }
