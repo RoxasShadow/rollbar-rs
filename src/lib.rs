@@ -179,7 +179,7 @@ struct Exception {
 impl Default for Exception {
     fn default() -> Self {
         Exception {
-            class: thread::current().name().unwrap_or("unnamed").to_owned(),
+            class: "Generic".to_string(),
             message: String::new(),
             description: String::new(),
         }
@@ -207,11 +207,6 @@ pub struct FrameBuilder {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "method")]
     function_name: Option<String>,
-
-    /// The line of code which caused caused the error.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(rename = "code")]
-    function_code_line: Option<String>,
 }
 
 impl<'a> FrameBuilder {
@@ -237,9 +232,6 @@ impl<'a> FrameBuilder {
 
     /// Set the method or the function name which caused caused the error.
     add_generic_field!(with_function_name, function_name, Into<String>);
-
-    /// Set the line of code which caused caused the error.
-    add_generic_field!(with_function_code_line, function_code_line, Into<String>);
 
     /// Conclude the creation of the frame.
     pub fn build(&self) -> Self {
@@ -281,8 +273,6 @@ impl<'a> ReportErrorBuilder<'a> {
                         line_number: symbol.lineno(),
                         function_name: symbol.name()
                             .map(|s| format!("{}", s)),
-                        function_code_line: symbol.addr()
-                            .map(|s| format!("{:?}", s)),
                         ..Default::default()
                     })
                 .collect::<Vec<FrameBuilder>>(),
@@ -398,13 +388,14 @@ impl<'a> ReportBuilder<'a> {
         let mut trace = Trace::default();
 
         let payload = panic_info.payload();
-        let message = match payload.downcast_ref::<String>() {
-            Some(s) => s.to_owned(),
+        let message = match payload.downcast_ref::<&str>() {
+            Some(s) => *s,
             None => match payload.downcast_ref::<String>() {
-                Some(s) => s.to_owned(),
-                None => "Box<Any>".to_owned(),
+                Some(s) => s,
+                None => "Box<Any>",
             },
         };
+        trace.exception.class = "<panic>".to_owned();
         trace.exception.message = message.to_owned();
         trace.exception.description = trace.exception.message.to_owned();
 
@@ -428,6 +419,7 @@ impl<'a> ReportBuilder<'a> {
     /// To be used when an `error::Error` must be reported.
     pub fn from_error<E: error::Error>(&'a mut self, error: &'a E) -> ReportErrorBuilder<'a> {
         let mut trace = Trace::default();
+        trace.exception.class = std::any::type_name::<E>().to_owned();
         trace.exception.message = error.description().to_owned();
         trace.exception.description = error
             .source()
@@ -449,6 +441,7 @@ impl<'a> ReportBuilder<'a> {
         let message = format!("{}", error_message);
 
         let mut trace = Trace::default();
+        trace.exception.class = std::any::type_name::<T>().to_owned();
         trace.exception.message = message.to_owned();
         trace.exception.description = message.to_owned();
 
@@ -704,7 +697,7 @@ mod tests {
                             "lineno": 268
                         }],
                         "exception": {
-                            "class": "tests::test_report_panics",
+                            "class": "<panic>",
                             "message": "attempt to divide by zero",
                             "description": "attempt to divide by zero"
                         }
@@ -783,7 +776,7 @@ mod tests {
                                     "colno": 24
                                 }],
                                 "exception": {
-                                    "class": "tests::test_report_error",
+                                    "class": "core::num::ParseIntError",
                                     "message": "invalid digit found in string",
                                     "description": "invalid digit found in string"
                                 }
