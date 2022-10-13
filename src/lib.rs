@@ -69,14 +69,22 @@ macro_rules! report_error_message {
 #[macro_export]
 macro_rules! report_panics {
     ($client:ident) => {{
-        ::std::panic::set_hook(::std::boxed::Box::new(move |panic_info| {
-            let backtrace = $crate::backtrace::Backtrace::new();
-            $client
-                .build_report()
-                .from_panic(panic_info)
-                .with_backtrace(&backtrace)
-                .send();
-        }))
+        static INIT: ::std::sync::Once = ::std::sync::Once::new();
+        INIT.call_once(|| {
+            let panic_hook = ::std::panic::take_hook();
+
+            ::std::panic::set_hook(::std::boxed::Box::new(move |panic_info| {
+                let backtrace = $crate::backtrace::Backtrace::new();
+
+                $client
+                    .build_report()
+                    .from_panic(panic_info)
+                    .with_backtrace(&backtrace)
+                    .send();
+
+                panic_hook(panic_info);
+            }))
+        })
     }};
 }
 
